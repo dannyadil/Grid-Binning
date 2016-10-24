@@ -1,0 +1,331 @@
+Include "CMyMetadata.mb" 'Actually only use CMetadata.mb
+
+TYPE COTableParam
+	TableName As String
+	Directory As String
+	ColumnName() As String
+	ColumnType() As String
+	
+	'FOR VALUE: INSERT AND UPDATE
+	ColumnID() As Integer
+	ColumnValue() As String
+END TYPE
+
+
+Declare Sub COTable_DeInitialize(p_cotable As COTableParam)
+
+Declare Sub COTable_SetTableName(p_cotable As COTableParam, ByVal tblName As String)
+Declare Sub COTable_SetDirectory(p_cotable As COTableParam, ByVal tblDir As String)
+Declare Function COTable_IsColumnNameUniq(p_cotable As COTableParam, ByVal colName As String) As Logical
+Declare Sub COTable_SetColumnNameAndType(p_cotable As COTableParam, ByVal colName As String, ByVal colType As String)
+
+Declare Function COTable_GetColumnID(p_cotable As COTableParam, ByVal colName As String) As Integer
+Declare Function COTable_GetColumnType(p_cotable As COTableParam, ByVal colName As String) As String
+
+''FOR INSERT FUNCTION
+Declare Function COTable_IsColumnIDUniq(p_cotable As COTableParam, ByVal colName As String) As Logical
+Declare Function COTable_SQLFormatValue(p_cotable As COTableParam, ByVal colID As Integer, ByVal colValue As String) As String
+Declare Sub COTable_SetValue(p_cotable As COTableParam, ByVal colName As String, ByVal colValue As String)
+Declare Function COTable_SQLInsert(p_cotable As COTableParam) As String
+Declare Sub COTable_Insert(p_cotable As COTableParam)
+
+''FOR CREATE FUNCTION
+Declare Sub COTable_Open(p_cotable As COTableParam, ByVal filePath As String)
+Declare Function COTable_SQLCreate(p_cotable As COTableParam) As String
+Declare Function COTable_TableLayerID(p_cotable As COTableParam) As Integer
+Declare Sub COTable_Create(p_cotable As COTableParam)
+Declare Sub COTable_CreateMap(p_cotable As COTableParam)
+
+''COMMIT TABLE
+Declare Sub COTable_Commit(p_cotable As COTableParam)
+
+
+''METADATA
+Declare Sub COTable_SetMetadata(p_cotable As COTableParam, ByVal sKeyName As String, ByVal sKeyValue As String)
+
+
+
+
+
+
+
+Sub COTable_DeInitialize(p_cotable As COTableParam)
+	p_cotable.TableName = ""
+	p_cotable.Directory = ""
+	Redim p_cotable.ColumnName(0)
+	Redim p_cotable.ColumnType(0)
+	
+	Redim p_cotable.ColumnID(0)
+	Redim p_cotable.ColumnValue(0)
+End Sub
+
+Sub COTable_SetTableName(p_cotable As COTableParam, ByVal tblName As String)
+	p_cotable.TableName = tblName
+End Sub
+
+Sub COTable_SetDirectory(p_cotable As COTableParam, ByVal tblDir As String)
+	p_cotable.Directory = tblDir
+End Sub
+
+Function COTable_IsColumnNameUniq(p_cotable As COTableParam, ByVal colName As String) As Logical
+	Dim _bResult As Logical 
+	Dim i As Integer
+	_bResult = TRUE
+	FOR i=1 TO UBound(p_cotable.ColumnName)
+		IF(UCase$(colName)=UCase$(p_cotable.ColumnName(i)))THEN
+			_bResult = FALSE
+			EXIT FOR
+		END IF
+	NEXT
+	COTable_IsColumnNameUniq = _bResult 
+End Function
+
+Sub COTable_SetColumnNameAndType(p_cotable As COTableParam, ByVal colName As String, ByVal colType As String)
+	Dim length As Integer
+	IF(COTable_IsColumnNameUniq(p_cotable, colName))THEN
+		length = UBound(p_cotable.ColumnName) + 1
+		REDIM p_cotable.ColumnName(length)
+		REDIM p_cotable.ColumnType(length)
+
+		p_cotable.ColumnName(length) = colName
+		p_cotable.ColumnType(length) = colType
+	END IF
+End Sub
+
+Function COTable_GetColumnID(p_cotable As COTableParam, ByVal colName As String) As Integer
+	Dim _iResult, i As Integer
+	_iResult = -1
+	FOR i=1 TO UBound(p_cotable.ColumnName) 
+		IF(UCase$(colName)=UCase$(p_cotable.ColumnName(i)))THEN
+			_iResult = i	
+			EXIT FOR	
+		END IF
+	NEXT 
+	COTable_GetColumnID = _iResult
+End Function
+
+Function COTable_GetColumnType(p_cotable As COTableParam, ByVal colName As String) As String
+	Dim id As Integer 
+	id = COTable_GetColumnID(p_cotable, colName)
+	IF(id>0)THEN
+		COTable_GetColumnType = p_cotable.ColumnType(id)
+	ELSE 
+		COTable_GetColumnType = "-1"
+	END IF
+End Function
+
+
+''FOR INSERT FUNCTION
+Function COTable_IsColumnIDUniq(p_cotable As COTableParam, ByVal colName As String) As Logical
+	Dim _bResult As Logical
+	Dim i, id As Integer
+	Dim colNameCur As String
+
+	_bResult = TRUE
+	FOR i=1 TO UBound(p_cotable.ColumnID)
+		id = p_cotable.ColumnID(i)
+		colNameCur = p_cotable.ColumnName(id)
+
+
+		IF(UCase$(colName)=UCase$(colNameCur))THEN
+			_bResult = FALSE
+			EXIT FOR
+		END IF
+	NEXT
+	COTable_IsColumnIDUniq = _bResult 
+End Function
+
+Function COTable_SQLFormatValue(p_cotable As COTableParam, ByVal colID As Integer, ByVal colValue As String) As String
+	Dim sResult, colType As String
+	sResult = "-1"
+	IF(colID>0 AND colID<=UBound(p_cotable.ColumnID))THEN
+		colType = UCase$(p_cotable.ColumnType(colID))
+		IF(InStr(1, colType, "CHAR")>0)THEN
+			sResult = """" + colValue + """"
+		ELSEIF(InStr(1, colType, "INTEGER")>0)THEN
+			sResult = colValue
+		ELSEIF(InStr(1, colType, "SMALLINT")>0)THEN
+			sResult = colValue
+		ELSEIF(InStr(1, colType, "FLOAT")>0)THEN
+			sResult = colValue
+		ELSEIF(InStr(1, colType, "DECIMAL")>0)THEN
+			sResult = colValue
+		ELSEIF(colType="DATE")THEN				'FORMAT: YYYYMMDD then nothing to add [sResult = colValue] else string format should "MM/DD/YYYY"
+			sResult = """" + colValue + """"
+		ELSEIF(colType="TIME")THEN				'FORMAT: hhmmsslll then nothing to add [sResult = colValue] else string format should "hh:mm:ss.lll"
+			sResult = """" + colValue + """"
+		ELSEIF(colType="DATETIME")THEN			'Use: MakeDateTime(CurDate(), CurTime()) then nothing to add [sResult = colValue] else string format "MM/DD/YY hh:mm:ss.lll"
+			sResult = """" + colValue + """"
+		ELSEIF(InStr(1, colType, "LOGICAL")>0)THEN
+			sResult = colValue
+		ELSE 
+			sResult = colValue
+		END IF
+	END IF
+	COTable_SQLFormatValue = sResult 
+End Function
+
+Sub COTable_SetValue(p_cotable As COTableParam, ByVal colName As String, ByVal colValue As String)
+	Dim length, colID As Integer
+	IF(COTable_IsColumnIDUniq(p_cotable, colName))THEN
+		colID = COTable_GetColumnID(p_cotable, colName)
+		IF(colID<>-1)THEN
+			length = UBound(p_cotable.ColumnID) + 1
+			REDIM p_cotable.ColumnID(length)
+			REDIM p_cotable.ColumnValue(length)
+
+			p_cotable.ColumnID(length) = colID
+			p_cotable.ColumnValue(length) = COTable_SQLFormatValue(p_cotable, colID, colValue)
+		END IF
+	END IF
+End Sub 
+
+Function COTable_SQLInsert(p_cotable As COTableParam) As String
+	Dim sqlInsert, params, values As String
+	Dim i, colID, length As Integer
+	length = UBound(p_cotable.ColumnID)
+	
+	FOR i=1 TO length 
+		colID = p_cotable.ColumnID(i)
+		IF(i=1)THEN
+			params = p_cotable.ColumnName(colID)
+			values = p_cotable.ColumnValue(i)
+		ELSE
+			params = params + ", " + p_cotable.ColumnName(colID)
+			values = values + ", " + p_cotable.ColumnValue(i)
+		END IF
+	NEXT
+	
+	IF(LEN(params)>1)THEN
+		sqlInsert = "INSERT INTO " + p_cotable.TableName + " (" + params + ") VALUES (" + values + ")"
+	ELSE
+		sqlInsert = ""
+	END IF
+	COTable_SQLInsert = sqlInsert
+End Function
+
+Sub COTable_Insert(p_cotable As COTableParam)
+	Dim sqlInsert As String
+	sqlInsert = COTable_SQLInsert(p_cotable)
+	
+	IF(sqlInsert<>"")THEN
+		RUN COMMAND sqlInsert
+		REDIM p_cotable.ColumnID(0)
+		REDIM p_cotable.ColumnValue(0)
+	END IF
+End Sub
+
+
+
+''FOR CREATE FUNCTION
+Sub COTable_Open(p_cotable As COTableParam, ByVal filePath As String)
+	Dim nbrOfCols, iCol, width, dec As Integer
+	Dim colName, colType, sCommand As String	
+
+	p_cotable.TableName = PathToTableName$(filePath)
+	p_cotable.Directory = PathToDirectory$(filePath)
+
+	sCommand = "OPEN TABLE """ + filePath + """"
+	RUN COMMAND sCommand
+	
+	nbrOfCols = TableInfo(p_cotable.TableName, TAB_INFO_NCOLS)
+	FOR iCol=1 TO nbrOfCols 
+		colName = ColumnInfo(p_cotable.TableName, "COL"&Str$(iCol), COL_INFO_NAME)
+		DO CASE ColumnInfo(p_cotable.TableName, "COL"&Str$(iCol), COL_INFO_TYPE)
+			CASE COL_TYPE_CHAR
+				width = ColumnInfo(p_cotable.TableName, "COL"&Str$(iCol), COL_INFO_WIDTH)
+				colType = "Char(" + Str$(width) + ")"
+			CASE COL_TYPE_DECIMAL
+				width = ColumnInfo(p_cotable.TableName, "COL"&Str$(iCol), COL_INFO_WIDTH)
+				dec = ColumnInfo(p_cotable.TableName, "COL"&Str$(iCol), COL_INFO_DECPLACES)
+				colType = "Decimal(" + Str$(width) + ", " + Str$(dec) + ")"
+			CASE COL_TYPE_INTEGER
+				colType = "Integer"
+			CASE COL_TYPE_SMALLINT
+				colType = "SmallInt"
+			CASE COL_TYPE_DATE
+				colType = "Date"
+			CASE COL_TYPE_LOGICAL
+				colType = "Logical"
+			'CASE COL_TYPE_GRAPHIC
+			CASE COL_TYPE_FLOAT
+				colType = "Float"
+			CASE COL_TYPE_TIME
+				colType = "Time"
+			CASE COL_TYPE_DATETIME
+				colType = "DateTime"
+			CASE ELSE
+				colType = "Char(255)"
+		END CASE
+		CALL COTable_SetColumnNameAndType(p_cotable, colName, colType)
+	NEXT
+End Sub
+
+Function COTable_SQLCreate(p_cotable As COTableParam) As String
+	Dim sqlCreate, param_types, filePath As String
+	Dim i, length As Integer
+
+	sqlCreate = ""
+	length = UBound(p_cotable.ColumnName)
+	IF(length>0)THEN
+		FOR i=1 TO length
+			IF(i=1)THEN
+				param_types = p_cotable.ColumnName(i) + " " + p_cotable.ColumnType(i)
+			ELSE 
+				param_types = param_types + ", " + p_cotable.ColumnName(i) + " " + p_cotable.ColumnType(i)
+			END IF
+		NEXT
+		filePath = p_cotable.Directory + p_cotable.TableName + ".TAB"
+		sqlCreate = "CREATE TABLE " + p_cotable.TableName + "(" + param_types + ") FILE """ + filePath + """ TYPE NATIVE Charset ""WindowsLatin1"" Version 100"
+	END IF
+	COTable_SQLCreate = sqlCreate
+End Function
+
+Function COTable_TableLayerID(p_cotable As COTableParam) As Integer
+	Dim tblID, nbrOfTables, i As Integer
+	Dim tblName As String
+
+	tblName = p_cotable.TableName
+	tblID = -1
+	nbrOfTables = NumTables()
+	FOR i=1 TO nbrOfTables 
+		IF(UCase$(tblName)=UCase$(TableInfo(i, TAB_INFO_NAME)))THEN
+			tblID = i
+			EXIT FOR
+		END IF
+	NEXT 
+	COTable_TableLayerID = tblID
+End Function
+
+Sub COTable_Create(p_cotable As COTableParam)
+	Dim sqlCreate As String 
+	IF(COTable_TableLayerID(p_cotable)=-1)THEN
+		sqlCreate = COTable_SQLCreate(p_cotable)
+		RUN COMMAND sqlCreate
+	END IF
+End Sub
+
+Sub COTable_CreateMap(p_cotable As COTableParam)
+	Dim sCommand As String 
+	IF(NOT TableInfo(p_cotable.TableName, TAB_INFO_MAPPABLE))THEN
+		sCommand = "CREATE MAP FOR " + p_cotable.TableName + " CoordSys Earth Projection 1, 0"
+		RUN COMMAND sCommand
+	END IF
+End Sub
+
+''COMMIT TABLE
+Sub COTable_Commit(p_cotable As COTableParam)
+	Dim sCommand As String
+	sCommand = "COMMIT TABLE " + p_cotable.TableName
+	RUN COMMAND sCommand
+End Sub
+
+Sub COTable_SetMetadata(p_cotable As COTableParam, ByVal sKeyName As String, ByVal sKeyValue As String)
+	Dim p_cmetadata As CMetadataParam
+	CALL CMetadata_Initialize(p_cmetadata, p_cotable.TableName)
+	CALL CMetadata_SetKey(p_cmetadata, sKeyName, sKeyValue)
+	CALL CMetadata_DeInitialize(p_cmetadata)
+End Sub
+
+
+

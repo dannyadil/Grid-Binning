@@ -1,0 +1,152 @@
+Include "FileFunctionsLib.mb"
+Include "CTBinning.mb" 'Include "COTable.mb"
+
+TYPE CProjectParam
+	p_cotable As COTableParam
+	ProjectName As String
+END TYPE
+
+
+Declare Sub CProject_Initialize(p_cproject As CProjectParam, ByVal sProjectName As String)
+Declare Sub CProject_DeInitialize(p_cproject As CProjectParam)
+
+Declare Function CProject_IsOpen(p_cproject As CProjectParam) As Logical
+Declare Sub CProject_Open(p_cproject As CProjectParam)
+Declare Sub CProject_Parser(p_cproject As CProjectParam)
+
+Declare Function CProject_IsDuplicateRow(p_cproject As CProjectParam, ByVal sTblNameAnchor As String, ByVal sTblNameActual As String, ByVal sFilePath As String) As Logical
+Declare Sub CProject_UpdateRow(p_cproject As CProjectParam, ByVal sTblNameAnchor As String, ByVal sTblNameActual As String, ByVal sFilePath As String)
+
+
+Declare Function CProject_IsFindTableName(ByVal sTableName As String) As Logical
+
+
+
+Sub CProject_Initialize(p_cproject As CProjectParam, ByVal sProjectName As String)
+	CALL COTable_SetDirectory(p_cproject.p_cotable, "")
+	CALL COTable_SetTableName(p_cproject.p_cotable, "TPROJECTINFO")
+	CALL COTable_SetColumnNameAndType(p_cproject.p_cotable, "ProjectName", "Char(50)")
+	CALL COTable_SetColumnNameAndType(p_cproject.p_cotable, "TableName_Anchor", "Char(50)")
+	CALL COTable_SetColumnNameAndType(p_cproject.p_cotable, "TableName_Actual", "Char(50)")
+	CALL COTable_SetColumnNameAndType(p_cproject.p_cotable, "FilePath", "Char(254)")
+
+	p_cproject.ProjectName = sProjectName
+End Sub
+
+Sub CProject_DeInitialize(p_cproject As CProjectParam) 
+End Sub
+
+Function CProject_IsOpen(p_cproject As CProjectParam) As Logical
+	Dim i As Integer
+	Dim bResult As Logical
+
+	bResult = FALSE
+	FOR i=1 TO NumTables()
+		IF(UCase$(p_cproject.p_cotable.TableName)=UCase$(TableInfo(i, TAB_INFO_NAME)))THEN
+			bResult = TRUE
+			EXIT FOR
+		END IF
+	NEXT
+
+	CProject_IsOpen = bResult
+End Function
+
+Sub CProject_Open(p_cproject As CProjectParam) 
+	Dim filePath As String
+
+	IF(CProject_IsOpen(p_cproject))THEN
+		filePath = TableInfo(p_cproject.p_cotable.TableName, TAB_INFO_TABFILE)
+		CALL COTable_SetDirectory(p_cproject.p_cotable, filePath)
+	ELSE
+		Dim fileDir, sCommand As String
+		fileDir = FOLDER_Browse("C:\", "Select project directory...")
+		IF(fileDir<>"")THEN
+			CALL COTable_SetDirectory(p_cproject.p_cotable, fileDir + "\")
+			IF(IsFindTableNamePath(p_cproject.p_cotable.Directory, p_cproject.p_cotable.TableName))THEN
+				sCommand = "OPEN TABLE """ + p_cproject.p_cotable.Directory + p_cproject.p_cotable.TableName + ".TAB"""
+				RUN COMMAND sCommand
+			ELSE 
+				CALL COTable_Create(p_cproject.p_cotable)
+			END IF
+		END IF
+	END IF
+End Sub
+
+Function CProject_IsFindTableName(ByVal sTableName As String) As Logical
+	Dim bResult As Logical
+	Dim tblNum, i As Integer
+	
+	bResult = FALSE
+
+	tblNum = NumTables()
+	FOR i=1 TO tblNum
+		IF UCase$(sTableName)=UCase$(TableInfo(i, TAB_INFO_NAME)) THEN
+			bResult = TRUE
+			EXIT FOR
+		END IF
+	NEXT 
+
+	CProject_IsFindTableName = bResult
+End Function
+
+Sub CProject_Parser(p_cproject As CProjectParam)
+	IF(CProject_IsOpen(p_cproject))THEN
+		SELECT * FROM p_cproject.p_cotable.TableName WHERE ProjectName=p_cproject.ProjectName INTO QRY_PRJPARSER NOSELECT
+		FETCH FIRST FROM QRY_PRJPARSER
+		DO WHILE NOT EOT(QRY_PRJPARSER)
+			IF(NOT CProject_IsFindTableName(QRY_PRJPARSER.TableName_Actual))THEN
+				OPEN TABLE QRY_PRJPARSER.FilePath
+			END IF
+			FETCH NEXT FROM QRY_PRJPARSER
+		LOOP
+		CLOSE TABLE QRY_PRJPARSER
+	ELSE
+		Print "CProject_Parser: No open project..."
+	END IF
+End Sub
+
+Function CProject_IsDuplicateRow(p_cproject As CProjectParam, ByVal sTblNameAnchor As String, ByVal sTblNameActual As String, ByVal sFilePath As String) As Logical
+	Dim bResult As Logical 
+	Dim sCommand As String
+
+	sCommand = "SELECT COUNT(*) ""NbrOfRows"" FROM " + p_cproject.p_cotable.TableName + " WHERE ProjectName=""" + 
+					p_cproject.ProjectName + """ AND TableName_Anchor=""" + 
+					sTblNameAnchor + """ AND TableName_Actual=""" + 
+					sTblNameActual + """ AND FilePath=""" + 
+					sFilePath + """ INTO QRY_PRJDUPLICATE NOSELECT"
+	RUN COMMAND sCommand
+
+	IF(QRY_PRJDUPLICATE.NbrOfRows>0)THEN
+		bResult = TRUE
+	ELSE 
+		bResult = FALSE
+	END IF
+	CLOSE TABLE QRY_PRJDUPLICATE
+	CProject_IsDuplicateRow = bResult
+End Function
+
+Sub CProject_UpdateRow(p_cproject As CProjectParam, ByVal sTblNameAnchor As String, ByVal sTblNameActual As String, ByVal sFilePath As String)
+	IF(NOT CProject_IsDuplicateRow(p_cproject, sTblNameAnchor, sTblNameActual, sFilePath))THEN
+		CALL COTable_SetValue(p_cproject.p_cotable, "ProjectName", p_cproject.ProjectName)
+		CALL COTable_SetValue(p_cproject.p_cotable, "TableName_Anchor", sTblNameAnchor)
+		CALL COTable_SetValue(p_cproject.p_cotable, "TableName_Actual", sTblNameActual)
+		CALL COTable_SetValue(p_cproject.p_cotable, "FilePath", sFilePath)
+		CALL COTable_Insert(p_cproject.p_cotable)
+		CALL COTable_Commit(p_cproject.p_cotable)
+	ELSE 
+		Print "CProject_UpdateRow: No update due to duplicate row..."
+	END IF
+End Sub
+
+
+
+
+
+
+
+
+
+
+
+
+

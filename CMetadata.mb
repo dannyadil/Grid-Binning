@@ -1,0 +1,142 @@
+
+
+TYPE CMetadataParam
+	TableName As String
+	KeyName() As String
+	KeyValue() As String
+END TYPE
+
+Declare Sub CMetadata_Initialize(p_cmetadata As CMetadataParam, ByVal sTableName As String)
+Declare Sub CMetadata_DeInitialize(p_cmetadata As CMetadataParam)
+Declare Sub CMetadata_Read(p_cmetadata As CMetadataParam)
+
+Declare Function CMetadata_GetKeyNameIndex(p_cmetadata As CMetadataParam, ByVal sKeyName As String) As Integer
+Declare Function CMetadata_GetKeyValue(p_cmetadata As CMetadataParam, ByVal sKeyName As String) As String
+
+Declare Sub CMetadata_SetKey(p_cmetadata As CMetadataParam, ByVal sKeyName As String, ByVal sKeyValue As String)
+Declare Sub CMetadata_ExtractKeyValue(p_cmetadata As CMetadataParam, ByVal sKeyName As String, saKeyValue() As String)
+
+
+Sub CMetadata_Initialize(p_cmetadata As CMetadataParam, ByVal sTableName As String)
+	p_cmetadata.TableName = sTableName
+	CALL CMetadata_Read(p_cmetadata)
+End Sub
+
+Sub CMetadata_DeInitialize(p_cmetadata As CMetadataParam)
+End Sub
+
+Sub CMetadata_Read(p_cmetadata As CMetadataParam)
+	Dim iTraversal, iLength As Integer
+	Dim sKeyName, sKeyValue As String
+	
+	'Initialize the traversal: 
+	Metadata Table p_cmetadata.TableName
+	SetTraverse "\" Hierarchical Into ID iTraversal
+
+	'Attemp to fetch the first key: 
+	Metadata Traverse iTraversal
+	Next Into Key sKeyName Into Value sKeyValue
+
+	'Now loop for as long as there are key values; 
+	'with each iteration of the loop, retrieve
+	'one key, and save it to the array
+	Do While sKeyName<>""
+		'Save it to array
+		iLength = UBound(p_cmetadata.KeyName) + 1
+		Redim p_cmetadata.KeyName(iLength)
+		Redim p_cmetadata.KeyValue(iLength)
+		p_cmetadata.KeyName(iLength) = sKeyName
+		p_cmetadata.KeyValue(iLength) = sKeyValue
+		
+		Metadata Traverse iTraversal
+		Next Into Key sKeyName Into Value sKeyValue
+	Loop
+	
+	'Release this traversal to free memory: 
+	MetaData Traverse iTraversal Destroy
+End Sub
+
+Function CMetadata_GetKeyNameIndex(p_cmetadata As CMetadataParam, ByVal sKeyName As String) As Integer
+	Dim iIndex, i, iLength As Integer
+	iIndex = -1
+	iLength = UBound(p_cmetadata.KeyName)
+	IF(iLength>0)THEN
+		FOR i=1 TO iLength 
+			IF(UCase$(sKeyName)=UCase$(p_cmetadata.KeyName(i)))THEN
+				iIndex = i
+				EXIT FOR
+			END IF
+		NEXT 
+	END IF	
+	CMetadata_GetKeyNameIndex = iIndex
+End Function
+
+Function CMetadata_GetKeyValue(p_cmetadata As CMetadataParam, ByVal sKeyName As String) As String
+	Dim sKeyValue As String
+	Dim iIndex As Integer 
+	iIndex = CMetadata_GetKeyNameIndex(p_cmetadata, sKeyName)
+	IF(iIndex>0)THEN
+		sKeyValue = p_cmetadata.KeyValue(iIndex)
+	ELSE 
+		sKeyValue = ""
+	END IF
+	CMetadata_GetKeyValue = sKeyValue
+End Function
+
+Sub CMetadata_SetKey(p_cmetadata As CMetadataParam, ByVal sKeyName As String, ByVal sKeyValue As String)
+	Dim sCommand As String
+
+	IF(Left$(sKeyName, 1) <> "\")THEN
+		sKeyName = "\" + sKeyName
+	END IF
+
+	sCommand = "MetaData Table " + p_cmetadata.TableName + " SetKey """ + sKeyName + """ To """ + sKeyValue + """"
+	RUN COMMAND sCommand
+	
+	'Re-Initialize this Class
+	CALL CMetadata_Initialize(p_cmetadata, p_cmetadata.TableName)
+End Sub
+
+Sub CMetadata_ExtractKeyValue(p_cmetadata As CMetadataParam, ByVal sKeyName As String, saKeyValue() As String)
+	Dim sKeyValue As String
+	Dim iPos, iStart, iEnd, iLength As Integer
+
+	sKeyValue = CMetadata_GetKeyValue(p_cmetadata, sKeyName)
+	IF(sKeyValue<>"")THEN
+		Redim saKeyValue(0)
+		iPos = InStr(1, sKeyValue, ";")
+		iStart = 1
+		Do While iPos>1 AND iStart<=Len(sKeyValue)
+			iEnd = iPos - 1
+			iLength = UBound(saKeyValue)+1
+			Redim saKeyValue(iLength)
+			saKeyValue(iLength) = Mid$(sKeyValue, iStart, iEnd-iStart+1) 
+			iStart = iPos + 1
+			
+			iPos = InStr(iStart, sKeyValue, ";")
+		Loop
+	END IF
+End Sub
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

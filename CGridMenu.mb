@@ -1,0 +1,194 @@
+Include "CProject.mb" 'Include "CTBinning.mb"
+Include "CMinMaxDlg.mb"
+'Include "CMyMetadata.mb" '--> already in COTable.mb
+
+TYPE CGridMenuParam
+	p_ctbinning As CTBinning
+	p_cminmaxdlg As CMinMaxDlg
+	MetadataKeyName As String
+END TYPE
+
+
+
+Declare Sub CGridMenu_Initialize(p_cgridmenu As CGridMenuParam)
+Declare Sub CGridMenu_DeInitialize(p_cgridmenu As CGridMenuParam)
+Declare Sub CGridMenu_CreateBlank(p_cgridmenu As CGridMenuParam, ByVal filePath As String)
+Declare Sub CGridMenu_CreateObject(p_cgridmenu As CGridMenuParam, ByVal filePath As String)
+Declare Sub CGridMenu_UpgradeBlankToObject(p_cgridmenu As CGridMenuParam, ByVal filePath As String)
+Declare Sub CGridMenu_AddGridIndexColumn(p_cgridmenu As CGridMenuParam, ByVal filePath As String)
+
+
+
+Declare Sub CGridMenu_CreateMetadata(p_cgridmenu As CGridMenuParam)
+Declare Sub CGridMenu_ReadMetadata(p_cgridmenu As CGridMenuParam, ByVal sTableName As String)
+Declare Function CGridMenu_IsFindTableName(ByVal sTableName As String) As Logical
+
+
+
+
+Sub CGridMenu_Initialize(p_cgridmenu As CGridMenuParam)
+	CALL CMinMaxDlg_Initialize(p_cgridmenu.p_cminmaxdlg)
+	CALL CTBinning_Initialize(p_cgridmenu.p_ctbinning)
+	p_cgridmenu.MetadataKeyName = "GRIDSettings"
+End Sub 
+
+Sub CGridMenu_DeInitialize(p_cgridmenu As CGridMenuParam)
+	CALL CMinMaxDlg_DeInitialize(p_cgridmenu.p_cminmaxdlg)
+	CALL CTBinning_DeInitialize(p_cgridmenu.p_ctbinning)
+End Sub
+
+Sub CGridMenu_CreateBlank(p_cgridmenu As CGridMenuParam, ByVal filePath As String)
+	Dim tblName, fileDir As String
+
+	fileDir = PathToDirectory$(filePath)
+	tblName = PathToTableName$(filePath)
+	
+	CALL CBinning_SetBins(p_cgridmenu.p_ctbinning.p_cbinbound.p_cbinning, p_cgridmenu.p_cminmaxdlg.Width, p_cgridmenu.p_cminmaxdlg.Height)
+	CALL CBinning_SetStartCoordinate(p_cgridmenu.p_ctbinning.p_cbinbound.p_cbinning, p_cgridmenu.p_cminmaxdlg.CentroidX, p_cgridmenu.p_cminmaxdlg.CentroidY)
+	CALL CBinning_SetUnit(p_cgridmenu.p_ctbinning.p_cbinbound.p_cbinning, p_cgridmenu.p_cminmaxdlg.Unit)
+	CALL COTable_SetTableName(p_cgridmenu.p_ctbinning.p_cotable, tblName)
+	CALL COTable_SetDirectory(p_cgridmenu.p_ctbinning.p_cotable, fileDir)
+
+	CALL COTable_Create(p_cgridmenu.p_ctbinning.p_cotable)
+
+	'Creating Metadata
+	CALL CGridMenu_CreateMetadata(p_cgridmenu)
+	
+	CALL CTBinning_ModifyBound(p_cgridmenu.p_ctbinning, p_cgridmenu.p_cminmaxdlg.LongMin, p_cgridmenu.p_cminmaxdlg.LatMin)
+	CALL CTBinning_ModifyBound(p_cgridmenu.p_ctbinning, p_cgridmenu.p_cminmaxdlg.LongMax, p_cgridmenu.p_cminmaxdlg.LatMax)
+	CALL CTBinning_CreateBlank(p_cgridmenu.p_ctbinning)
+
+	CALL COTable_Commit(p_cgridmenu.p_ctbinning.p_cotable)
+End Sub 
+
+Sub CGridMenu_CreateObject(p_cgridmenu As CGridMenuParam, ByVal filePath As String)
+	CALL CGridMenu_CreateBlank(p_cgridmenu, filePath)
+	CALL COTable_CreateMap(p_cgridmenu.p_ctbinning.p_cotable)
+	CALL CTBinning_UpdateBins(p_cgridmenu.p_ctbinning)
+	CALL COTable_Commit(p_cgridmenu.p_ctbinning.p_cotable)
+End Sub 
+
+Sub CGridMenu_UpgradeBlankToObject(p_cgridmenu As CGridMenuParam, ByVal filePath As String)
+	Dim tblName, fileDir As String
+
+	fileDir = PathToDirectory$(filePath)
+	tblName = PathToTableName$(filePath)
+	
+	IF(NOT CGridMenu_IsFindTableName(tblName))THEN
+		OPEN TABLE filePath
+	END IF
+	
+	'Read Metadata before Update  --> should be before open CMinMaxDlg
+	'CALL CGridMenu_ReadMetadata(p_cgridmenu, tblName)
+
+	CALL CBinning_SetBins(p_cgridmenu.p_ctbinning.p_cbinbound.p_cbinning, p_cgridmenu.p_cminmaxdlg.Width, p_cgridmenu.p_cminmaxdlg.Height)
+	CALL CBinning_SetStartCoordinate(p_cgridmenu.p_ctbinning.p_cbinbound.p_cbinning, p_cgridmenu.p_cminmaxdlg.CentroidX, p_cgridmenu.p_cminmaxdlg.CentroidY)
+	CALL CBinning_SetUnit(p_cgridmenu.p_ctbinning.p_cbinbound.p_cbinning, p_cgridmenu.p_cminmaxdlg.Unit)
+	CALL COTable_SetTableName(p_cgridmenu.p_ctbinning.p_cotable, tblName)
+	CALL COTable_SetDirectory(p_cgridmenu.p_ctbinning.p_cotable, fileDir)
+	CALL COTable_CreateMap(p_cgridmenu.p_ctbinning.p_cotable)
+
+	'Update Metadata
+	CALL CGridMenu_CreateMetadata(p_cgridmenu)
+
+	CALL CTBinning_ModifyBound(p_cgridmenu.p_ctbinning, p_cgridmenu.p_cminmaxdlg.LongMin, p_cgridmenu.p_cminmaxdlg.LatMin)
+	CALL CTBinning_ModifyBound(p_cgridmenu.p_ctbinning, p_cgridmenu.p_cminmaxdlg.LongMax, p_cgridmenu.p_cminmaxdlg.LatMax)
+
+	CALL CTBinning_UpdateBins(p_cgridmenu.p_ctbinning)
+	CALL COTable_Commit(p_cgridmenu.p_ctbinning.p_cotable)
+End Sub
+
+Sub CGridMenu_AddGridIndexColumn(p_cgridmenu As CGridMenuParam, ByVal filePath As String)
+
+End Sub
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Function CGridMenu_IsFindTableName(ByVal sTableName As String) As Logical
+	Dim bResult As Logical
+	Dim tblNum, i As Integer
+	
+	bResult = FALSE
+
+	tblNum = NumTables()
+	FOR i=1 TO tblNum
+		IF UCase$(sTableName)=UCase$(TableInfo(i, TAB_INFO_NAME)) THEN
+			bResult = TRUE
+			EXIT FOR
+		END IF
+	NEXT 
+
+	CGridMenu_IsFindTableName = bResult
+End Function
+
+Sub CGridMenu_CreateMetadata(p_cgridmenu As CGridMenuParam)
+	Dim p_cmymetadata As CMyMetadataParam
+	Dim sKeyName, sKeyValue As String
+
+	CALL CMyMetadata_Initialize(p_cmymetadata)
+	CALL CMyMetadata_SetKeyName(p_cmymetadata, p_cgridmenu.MetadataKeyName)
+	CALL CMyMetadata_Insert(p_cmymetadata, "CentroidX", Str$(p_cgridmenu.p_cminmaxdlg.CentroidX))
+	CALL CMyMetadata_Insert(p_cmymetadata, "CentroidY", Str$(p_cgridmenu.p_cminmaxdlg.CentroidY))
+	CALL CMyMetadata_Insert(p_cmymetadata, "LongMin", Str$(p_cgridmenu.p_cminmaxdlg.LongMin))
+	CALL CMyMetadata_Insert(p_cmymetadata, "LatMin", Str$(p_cgridmenu.p_cminmaxdlg.LatMin))
+	CALL CMyMetadata_Insert(p_cmymetadata, "LongMax", Str$(p_cgridmenu.p_cminmaxdlg.LongMax))
+	CALL CMyMetadata_Insert(p_cmymetadata, "LatMax", Str$(p_cgridmenu.p_cminmaxdlg.LatMax))
+	CALL CMyMetadata_Insert(p_cmymetadata, "Width", Str$(p_cgridmenu.p_cminmaxdlg.Width))
+	CALL CMyMetadata_Insert(p_cmymetadata, "Height", Str$(p_cgridmenu.p_cminmaxdlg.Height))
+	CALL CMyMetadata_Insert(p_cmymetadata, "Unit", p_cgridmenu.p_cminmaxdlg.Unit)
+	sKeyValue = CMyMetadata_GetKeyValue(p_cmymetadata)
+	sKeyName = CMyMetadata_GetKeyName(p_cmymetadata)
+	CALL CMyMetadata_DeInitialize(p_cmymetadata)
+
+	CALL COTable_SetMetadata(p_cgridmenu.p_ctbinning.p_cotable, sKeyName, sKeyValue)
+End Sub
+
+Sub CGridMenu_ReadMetadata(p_cgridmenu As CGridMenuParam, ByVal sTableName As String)
+	Dim p_cmetadata As CMetadataParam	
+	Dim sKeyName, sKeyValue As String
+	
+	CALL CMetadata_Initialize(p_cmetadata, sTableName)
+	sKeyName = "\" + p_cgridmenu.MetadataKeyName
+	sKeyValue = CMetadata_GetKeyValue(p_cmetadata, sKeyName)
+	CALL CMetadata_DeInitialize(p_cmetadata)
+
+	Dim p_cmymetadata As CMyMetadataParam
+	CALL CMyMetadata_Initialize(p_cmymetadata)
+	CALL CMyMetadata_SetKeyName(p_cmymetadata, sKeyName)
+	CALL CMyMetadata_Extract(p_cmymetadata, sKeyValue)
+	p_cgridmenu.p_cminmaxdlg.CentroidX = Val(CMyMetadata_GetParamValue(p_cmymetadata, "CentroidX"))
+	p_cgridmenu.p_cminmaxdlg.CentroidY = Val(CMyMetadata_GetParamValue(p_cmymetadata, "CentroidY"))
+	p_cgridmenu.p_cminmaxdlg.LongMin = Val(CMyMetadata_GetParamValue(p_cmymetadata, "LongMin"))
+	p_cgridmenu.p_cminmaxdlg.LatMin = Val(CMyMetadata_GetParamValue(p_cmymetadata, "LatMin"))
+	p_cgridmenu.p_cminmaxdlg.LongMax = Val(CMyMetadata_GetParamValue(p_cmymetadata, "LongMax"))
+	p_cgridmenu.p_cminmaxdlg.LatMax = Val(CMyMetadata_GetParamValue(p_cmymetadata, "LatMax"))
+	p_cgridmenu.p_cminmaxdlg.Width = Val(CMyMetadata_GetParamValue(p_cmymetadata, "Width"))
+	p_cgridmenu.p_cminmaxdlg.Height = Val(CMyMetadata_GetParamValue(p_cmymetadata, "Height"))
+	p_cgridmenu.p_cminmaxdlg.Unit = CMyMetadata_GetParamValue(p_cmymetadata, "Unit")
+	CALL CMyMetadata_DeInitialize(p_cmymetadata)
+End Sub
+
+
+
+
+
+
+
+
+

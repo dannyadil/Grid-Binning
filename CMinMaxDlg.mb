@@ -1,0 +1,264 @@
+
+TYPE CMinMaxDlg
+	LongMax As Float
+	LatMax As Float
+	LongMin As Float
+	LatMin As Float
+
+	CentroidX As Float
+	CentroidY As Float
+
+	Width As Float
+	Height As Float
+
+	IsAddMidCoordCol As Logical
+	Unit As String
+
+	IsOKButtonClick As Logical
+	IsCancelButtonClick As Logical
+
+	IdLongMax As Integer
+	IdLatMax As Integer
+	IdLongMin As Integer
+	IdLatMin As Integer
+	IdCentroidX As Integer
+	IdCentroidY As Integer
+	IdWidth As Integer
+	IdHeight As Integer
+	IdIsAddMidCoordCol As Integer
+	IdOk As Integer
+	IdCancel As Integer
+END TYPE
+
+Declare Sub CMinMaxDlg_Initialize(p_cminmaxdlg As CMinMaxDlg)
+Declare Sub CMinMaxDlg_DeInitialize(p_cminmaxdlg As CMinMaxDlg)
+
+Declare Sub CMinMaxDlg_Show(p_cminmaxdlg As CMinMaxDlg)
+Declare Function CMinMaxDlg_IsOKButtonClick(p_cminmaxdlg As CMinMaxDlg) As Logical
+Declare Function CMinMaxDlg_IsCancelButtonClick(p_cminmaxdlg As CMinMaxDlg) As Logical
+
+Sub CMinMaxDlg_Initialize(p_cminmaxdlg As CMinMaxDlg)
+	p_cminmaxdlg.LongMax = -0.054377
+	p_cminmaxdlg.LatMax = 0.048599
+	p_cminmaxdlg.LongMin = 0.052539
+	p_cminmaxdlg.LatMin = -0.048264
+
+	p_cminmaxdlg.CentroidX = 0
+	p_cminmaxdlg.CentroidY = 0
+
+	p_cminmaxdlg.Width = 50
+	p_cminmaxdlg.Height = 50
+
+	p_cminmaxdlg.IsAddMidCoordCol = 0
+	p_cminmaxdlg.Unit = "m"
+
+	p_cminmaxdlg.IsOKButtonClick = FALSE
+	p_cminmaxdlg.IsCancelButtonClick = FALSE
+
+	p_cminmaxdlg.IdLongMax = 1
+	p_cminmaxdlg.IdLatMax = 2
+	p_cminmaxdlg.IdLongMin = 3
+	p_cminmaxdlg.IdLatMin = 4
+	p_cminmaxdlg.IdCentroidX = 5
+	p_cminmaxdlg.IdCentroidY = 6
+	p_cminmaxdlg.IdWidth = 7
+	p_cminmaxdlg.IdHeight = 8
+	p_cminmaxdlg.IdIsAddMidCoordCol = 9
+	p_cminmaxdlg.IdOk = 10
+	p_cminmaxdlg.IdCancel = 11
+End Sub
+
+Sub CMinMaxDlg_DeInitialize(p_cminmaxdlg As CMinMaxDlg)
+	p_cminmaxdlg.LongMax = 0.041420
+	p_cminmaxdlg.LatMax = 0
+	p_cminmaxdlg.LongMin = 0
+	p_cminmaxdlg.LatMin = -0.044050
+
+	p_cminmaxdlg.CentroidX = 0
+	p_cminmaxdlg.CentroidY = 0
+
+	p_cminmaxdlg.Width = 50
+	p_cminmaxdlg.Height = 50
+
+	p_cminmaxdlg.IsAddMidCoordCol = 0
+	p_cminmaxdlg.Unit = "m"
+
+	p_cminmaxdlg.IsOKButtonClick = FALSE
+	p_cminmaxdlg.IsCancelButtonClick = FALSE
+
+	p_cminmaxdlg.IdLongMax = 1
+	p_cminmaxdlg.IdLatMax = 2
+	p_cminmaxdlg.IdLongMin = 3
+	p_cminmaxdlg.IdLatMin = 4
+	p_cminmaxdlg.IdCentroidX = 5
+	p_cminmaxdlg.IdCentroidY = 6
+	p_cminmaxdlg.IdWidth = 7
+	p_cminmaxdlg.IdHeight = 8
+	p_cminmaxdlg.IdIsAddMidCoordCol = 9
+	p_cminmaxdlg.IdOk = 10
+	p_cminmaxdlg.IdCancel = 11
+End Sub
+
+Sub CMinMaxDlg_Show(p_cminmaxdlg As CMinMaxDlg)
+	Dialog
+		Title "Input From Min and Max Coord..."
+		Width 160
+
+	''Maximum and Minimum Point
+	Control GroupBox
+		Title "Minimum and Maximum Point"
+		Position 5, 5
+		Width 145
+		Height 80
+
+	Control StaticText
+      	Title "Min Longitude: "
+		Position  10, 20
+	Control EditText
+		ID p_cminmaxdlg.IdLongMin
+		Value p_cminmaxdlg.LongMin
+		Into p_cminmaxdlg.LongMin
+		Position 65, 20
+
+	Control StaticText
+      	Title "Min Latitude: "
+		Position  10, 35
+	Control EditText
+		ID p_cminmaxdlg.IdLatMin
+		Value p_cminmaxdlg.LatMin
+		Into p_cminmaxdlg.LatMin
+		Position 65, 35
+
+	Control StaticText
+      	Title "Max Longitude: "
+		Position  10, 55
+	Control EditText
+		ID p_cminmaxdlg.IdLongMax
+		Value p_cminmaxdlg.LongMax
+		Into p_cminmaxdlg.LongMax
+		Position 65, 55
+
+	Control StaticText
+      	Title "Max Latitude: "
+		Position  10, 70
+	Control EditText
+		ID p_cminmaxdlg.IdLatMax
+		Value p_cminmaxdlg.LatMax
+		Into p_cminmaxdlg.LatMax
+		Position 65, 70
+
+	'Centroid of Coordinate
+	Control GroupBox
+		Title "Centroid of Coordinate"
+		Position 5, 90
+		Width 145
+		Height 40
+
+	Control StaticText
+      	Title "CentroidX: "
+		Position  10, 100
+	Control EditText
+		ID p_cminmaxdlg.IdCentroidX
+		Value p_cminmaxdlg.CentroidX
+		Into p_cminmaxdlg.CentroidX
+		Position 65, 100
+
+	Control StaticText
+      	Title "CentroidY: "
+		Position  10, 115
+	Control EditText
+		ID p_cminmaxdlg.IdCentroidY
+		Value p_cminmaxdlg.CentroidY
+		Into p_cminmaxdlg.CentroidY
+		Position 65, 115
+
+	'Bins (meter)
+	Control GroupBox
+		Title "Bins (meter)"
+		Position 5, 140
+		Width 145
+		Height 40
+
+	Control StaticText
+      	Title "Width: "
+		Position  10, 150
+	Control EditText
+		ID p_cminmaxdlg.IdWidth
+		Value p_cminmaxdlg.Width
+		Into p_cminmaxdlg.Width
+		Position 65, 150
+
+	Control StaticText
+      	Title "Height: "
+		Position  10, 165
+	Control EditText
+		ID p_cminmaxdlg.IdHeight
+		Value p_cminmaxdlg.Height
+		Into p_cminmaxdlg.Height
+		Position 65, 165
+
+	'Is It LongMid and LatMid add to table?
+	Control GroupBox
+		Title "Include Mid Coordinate?"
+		Position 5, 190
+		Width 145
+		Height 30
+
+	Control CheckBox
+		Title "Add LongMid and LatMid to Grid Table"
+		ID p_cminmaxdlg.IdIsAddMidCoordCol
+		Value p_cminmaxdlg.IsAddMidCoordCol
+		Into p_cminmaxdlg.IsAddMidCoordCol
+		Position 10, 205
+
+
+	Control OKButton
+		Title "OK"
+		Width 40 Height 20
+		'Calling CMinMaxDlg_OKButton(p_cminmaxdlg)
+		ID p_cminmaxdlg.IdOk
+
+	Control CancelButton
+		Title "Cancel"
+		Width 40 Height 20
+		'Calling FindStreet
+		ID p_cminmaxdlg.IdCancel
+
+	IF(CommandInfo(CMD_INFO_DLG_OK))THEN
+		p_cminmaxdlg.IsOKButtonClick = TRUE
+		p_cminmaxdlg.IsCancelButtonClick = FALSE
+	ELSE
+		p_cminmaxdlg.IsOKButtonClick = FALSE
+		p_cminmaxdlg.IsCancelButtonClick = TRUE
+	END IF
+End Sub
+
+Function CMinMaxDlg_IsOKButtonClick(p_cminmaxdlg As CMinMaxDlg) As Logical
+	CMinMaxDlg_IsOKButtonClick = p_cminmaxdlg.IsOKButtonClick
+End Function
+
+Function CMinMaxDlg_IsCancelButtonClick(p_cminmaxdlg As CMinMaxDlg) As Logical
+	CMinMaxDlg_IsCancelButtonClick = p_cminmaxdlg.IsCancelButtonClick
+End Function
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

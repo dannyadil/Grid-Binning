@@ -1,0 +1,181 @@
+Include "COTable.mb"
+Include "CBinningBound.mb"
+
+TYPE CTBinning
+	p_cbinbound As CBinningBound
+	p_cotable As COTableParam
+
+	IsMidCoordSet As Logical
+	IsMinimumSetting As Logical
+END TYPE
+
+Declare Sub CTBinning_Initialize(p_ctbinning As CTBinning)
+Declare Sub CTBinning_ReInitialize(p_ctbinning As CTBinning, ByVal bIsMidCoordSet As Logical, ByVal bIsMinSet As Logical)
+Declare Sub CTBinning_DeInitialize(p_ctbinning As CTBinning)
+Declare Sub CTBinning_ModifyBound(p_ctbinning As CTBinning, ByVal fLong As Float, ByVal fLat As Float)
+Declare Sub CTBinning_CreateBlank(p_ctbinning As CTBinning)
+Declare Sub CTBinning_UpdateBins(p_ctbinning As CTBinning)
+
+Declare Sub CTBinning_SetIsMinimumSetting(p_ctbinning As CTBinning, ByVal bIsMinimumSetting As Logical) 
+Declare Function CTBinning_GetIsMinimumSetting(p_ctbinning As CTBinning) As Logical
+Declare Sub CTBinning_SetIsMidCoordSet(p_ctbinning As CTBinning, ByVal bIsMidCoordSet As Logical)
+Declare Function CTBinning_GetIsMidCoordSet(p_ctbinning As CTBinning) As Logical
+
+
+Sub CTBinning_Initialize(p_ctbinning As CTBinning)
+	CALL CTBinning_SetIsMinimumSetting(p_ctbinning, TRUE)
+	CALL CTBinning_SetIsMidCoordSet(p_ctbinning, FALSE)
+
+	CALL CBinningBound_Initialize(p_ctbinning.p_cbinbound)
+	CALL COTable_SetTableName(p_ctbinning.p_cotable, "GRID")
+
+	
+	CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "IDX", "Integer")
+	CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "IDY", "Integer")
+	CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Quadrant", "Integer")
+
+	IF(CTBinning_GetIsMidCoordSet(p_ctbinning))THEN
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "LongMid", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "LatMid", "Float")
+	END IF
+
+	IF(NOT CTBinning_GetIsMinimumSetting(p_ctbinning))THEN
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Long1", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Lat1", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Long2", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Lat2", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Long3", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Lat3", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Long4", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Lat4", "Float")
+	END IF
+End Sub
+
+Sub CTBinning_ReInitialize(p_ctbinning As CTBinning, ByVal bIsMidCoordSet As Logical, ByVal bIsMinSet As Logical)
+	'DeInitialize first for CTBinning
+	CALL CTBinning_DeInitialize(p_ctbinning)
+	
+	CALL CTBinning_SetIsMinimumSetting(p_ctbinning, bIsMinSet)
+	CALL CTBinning_SetIsMidCoordSet(p_ctbinning, bIsMidCoordSet)
+
+	CALL CBinningBound_Initialize(p_ctbinning.p_cbinbound)
+	CALL COTable_SetTableName(p_ctbinning.p_cotable, "GRID")
+
+	
+	CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "IDX", "Integer")
+	CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "IDY", "Integer")
+	CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Quadrant", "Integer")
+
+	IF(CTBinning_GetIsMidCoordSet(p_ctbinning))THEN
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "LongMid", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "LatMid", "Float")
+	END IF
+
+	IF(NOT CTBinning_GetIsMinimumSetting(p_ctbinning))THEN
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Long1", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Lat1", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Long2", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Lat2", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Long3", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Lat3", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Long4", "Float")
+		CALL COTable_SetColumnNameAndType(p_ctbinning.p_cotable, "Lat4", "Float")
+	END IF
+End Sub
+
+Sub CTBinning_DeInitialize(p_ctbinning As CTBinning)
+	CALL CBinningBound_DeInitialize(p_ctbinning.p_cbinbound)
+	CALL COTable_DeInitialize(p_ctbinning.p_cotable)
+	p_ctbinning.IsMidCoordSet = FALSE
+	p_ctbinning.IsMinimumSetting = TRUE
+End Sub
+
+Sub CTBinning_ModifyBound(p_ctbinning As CTBinning, ByVal fLong As Float, ByVal fLat As Float)
+	CALL CBinningBound_ModifyBound(p_ctbinning.p_cbinbound, fLong, fLat)
+End Sub
+
+Sub CTBinning_CreateBlank(p_ctbinning As CTBinning)
+	Dim iRows, iCols, iRow, iCol As Integer
+	Dim iQuadrant, idx, idy As Integer
+	Dim fLongMid, fLatMid, fLong1, fLat1, fLong2, fLat2, fLong3, fLat3, fLong4, fLat4 As Float
+	
+	iRows = CBinningBound_GetNbrOfRows(p_ctbinning.p_cbinbound)
+	iCols = CBinningBound_GetNbrOfColumns(p_ctbinning.p_cbinbound)
+
+	'CREATE TABLE 
+	CALL COTable_Create(p_ctbinning.p_cotable)
+	CALL COTable_CreateMap(p_ctbinning.p_cotable)
+
+	FOR iRow=1 TO iRows 
+		FOR iCol=1 TO iCols
+			idx = CBinningBound_GetXIndex(p_ctbinning.p_cbinbound, iRow, iCol)
+			idy = CBinningBound_GetYIndex(p_ctbinning.p_cbinbound, iRow, iCol)
+			iQuadrant = CBinningBound_GetQuadrant(p_ctbinning.p_cbinbound, iRow, iCol)
+
+			CALL COTable_SetValue(p_ctbinning.p_cotable, "IDX", Str$(idx))
+			CALL COTable_SetValue(p_ctbinning.p_cotable, "IDY", Str$(idy))
+			CALL COTable_SetValue(p_ctbinning.p_cotable, "Quadrant", Str$(iQuadrant))
+
+			IF(CTBinning_GetIsMidCoordSet(p_ctbinning))THEN
+				fLongMid = CBinningBound_GetLongMid(p_ctbinning.p_cbinbound, iRow, iCol)
+				fLatMid = CBinningBound_GetLatMid(p_ctbinning.p_cbinbound, iRow, iCol)
+
+				CALL COTable_SetValue(p_ctbinning.p_cotable, "LongMid", Str$(fLongMid))
+				CALL COTable_SetValue(p_ctbinning.p_cotable, "LatMid", Str$(fLatMid))
+			END IF
+
+			IF(NOT CTBinning_GetIsMinimumSetting(p_ctbinning))THEN
+				fLong1 = CBinningBound_GetLong1(p_ctbinning.p_cbinbound, iRow, iCol)
+				fLat1 = CBinningBound_GetLat1(p_ctbinning.p_cbinbound, iRow, iCol)
+				fLong2 = CBinningBound_GetLong2(p_ctbinning.p_cbinbound, iRow, iCol)
+				fLat2 = CBinningBound_GetLat2(p_ctbinning.p_cbinbound, iRow, iCol)
+				fLong3 = CBinningBound_GetLong3(p_ctbinning.p_cbinbound, iRow, iCol)
+				fLat3 = CBinningBound_GetLat3(p_ctbinning.p_cbinbound, iRow, iCol)
+				fLong4 = CBinningBound_GetLong4(p_ctbinning.p_cbinbound, iRow, iCol)
+				fLat4 = CBinningBound_GetLat4(p_ctbinning.p_cbinbound, iRow, iCol)
+				
+				CALL COTable_SetValue(p_ctbinning.p_cotable, "Long1", Str$(fLong1))
+				CALL COTable_SetValue(p_ctbinning.p_cotable, "Lat1", Str$(fLat1))
+				CALL COTable_SetValue(p_ctbinning.p_cotable, "Long2", Str$(fLong2))
+				CALL COTable_SetValue(p_ctbinning.p_cotable, "Lat2", Str$(fLat2))
+				CALL COTable_SetValue(p_ctbinning.p_cotable, "Long3", Str$(fLong3))
+				CALL COTable_SetValue(p_ctbinning.p_cotable, "Lat3", Str$(fLat3))
+				CALL COTable_SetValue(p_ctbinning.p_cotable, "Long4", Str$(fLong4))
+				CALL COTable_SetValue(p_ctbinning.p_cotable, "Lat4", Str$(fLat4))
+			END IF
+	
+			CALL COTable_Insert(p_ctbinning.p_cotable)
+		NEXT
+	NEXT	
+	
+	CALL COTable_Commit(p_ctbinning.p_cotable)
+End Sub
+
+Sub CTBinning_UpdateBins(p_ctbinning As CTBinning)
+	UPDATE p_ctbinning.p_cotable.TableName SET OBJ = CBinning_CreateObjectFromIdx(p_ctbinning.p_cbinbound.p_cbinning, Quadrant, IDX, IDY)
+	COMMIT TABLE p_ctbinning.p_cotable.TableName
+End Sub 
+
+Sub CTBinning_SetIsMinimumSetting(p_ctbinning As CTBinning, ByVal bIsMinimumSetting As Logical) 
+	p_ctbinning.IsMinimumSetting = bIsMinimumSetting
+End Sub 
+
+Function CTBinning_GetIsMinimumSetting(p_ctbinning As CTBinning) As Logical
+	CTBinning_GetIsMinimumSetting = p_ctbinning.IsMinimumSetting
+End Function
+
+Sub CTBinning_SetIsMidCoordSet(p_ctbinning As CTBinning, ByVal bIsMidCoordSet As Logical)
+	p_ctbinning.IsMidCoordSet = bIsMidCoordSet
+End Sub 
+
+Function CTBinning_GetIsMidCoordSet(p_ctbinning As CTBinning) As Logical
+	CTBinning_GetIsMidCoordSet = p_ctbinning.IsMidCoordSet
+End Function
+
+
+
+
+
+
+
+

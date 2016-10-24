@@ -1,0 +1,234 @@
+Include "CBinning.mb"
+
+TYPE CBinningBound
+	p_cbinning As CBinningParam
+	
+	LongMax As Float
+	LatMax As Float
+	LongMin As Float
+	LatMin As Float
+END TYPE
+
+Declare Sub CBinningBound_Initialize(p_cbinbound As CBinningBound)
+Declare Sub CBinningBound_ModifyBound(p_cbinbound As CBinningBound, ByVal fLong As Float, ByVal fLat As Float)
+Declare Sub CBinningBound_DeInitialize(p_cbinbound As CBinningBound)
+
+Declare Function CBinningBound_GetNbrOfColumns(p_cbinbound As CBinningBound) As Integer
+Declare Function CBinningBound_GetNbrOfRows(p_cbinbound As CBinningBound) As Integer
+
+Declare Function CBinningBound_GetLongTemp(p_cbinbound As CBinningBound, ByVal iCol As Integer) As Float
+Declare Function CBinningBound_GetLatTemp(p_cbinbound As CBinningBound, ByVal iRow As Integer) As Float
+
+Declare Function CBinningBound_GetQuadrant(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Integer
+Declare Function CBinningBound_GetXIndex(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Integer
+Declare Function CBinningBound_GetYIndex(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Integer
+
+Declare Function CBinningBound_GetLongMid(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+Declare Function CBinningBound_GetLatMid(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+Declare Function CBinningBound_GetLong1(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+Declare Function CBinningBound_GetLat1(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+Declare Function CBinningBound_GetLong2(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+Declare Function CBinningBound_GetLat2(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+Declare Function CBinningBound_GetLong3(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+Declare Function CBinningBound_GetLat3(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+Declare Function CBinningBound_GetLong4(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+Declare Function CBinningBound_GetLat4(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+Declare Function CBinningBound_CreateObject(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Object
+
+
+Sub CBinningBound_Initialize(p_cbinbound As CBinningBound)
+	p_cbinbound.LongMax = -1000000
+	p_cbinbound.LatMax = -1000000
+	p_cbinbound.LongMin = 1000000
+	p_cbinbound.LatMin = 1000000
+
+	CALL CBinning_Initialize(p_cbinbound.p_cbinning)
+End Sub
+
+Sub CBinningBound_DeInitialize(p_cbinbound As CBinningBound)
+	p_cbinbound.LongMax = 0
+	p_cbinbound.LatMax = 0
+	p_cbinbound.LongMin = 0
+	p_cbinbound.LatMin = 0
+
+	CALL CBinning_DeInitialize(p_cbinbound.p_cbinning)
+End Sub
+
+Sub CBinningBound_ModifyBound(p_cbinbound As CBinningBound, ByVal fLong As Float, ByVal fLat As Float)
+	Dim fLongMin, fLatMin, fLongMax, fLatMax As Float
+	Dim fLongMid, fLatMid As Float
+
+	fLongMid = CBinning_GetLongMid(p_cbinbound.p_cbinning, fLong, fLat)
+	fLatMid = CBinning_GetLatMid(p_cbinbound.p_cbinning, fLong, fLat)
+
+	fLongMax = Maximum(p_cbinbound.LongMax, fLongMid)
+	fLatMax = Maximum(p_cbinbound.LatMax, fLatMid)
+	fLongMin = Minimum(p_cbinbound.LongMin, fLongMid)
+	fLatMin = Minimum(p_cbinbound.LatMin, fLatMid)
+
+	p_cbinbound.LongMax = fLongMax
+	p_cbinbound.LatMax = fLatMax
+	p_cbinbound.LongMin = fLongMin
+	p_cbinbound.LatMin = fLatMin
+End Sub
+
+Function CBinningBound_GetNbrOfColumns(p_cbinbound As CBinningBound) As Integer
+	Dim fLeftBottomLong, fLeftBottomLat, fRightBottomLong, fRightBottomLat As Float
+	
+	fLeftBottomLong = p_cbinbound.LongMin
+	fLeftBottomLat = p_cbinbound.LatMin
+	fRightBottomLong = p_cbinbound.LongMax
+	fRightBottomLat = p_cbinbound.LatMin
+	
+	CBinningBound_GetNbrOfColumns = Int(Distance(fLeftBottomLong, fLeftBottomLat, fRightBottomLong, fRightBottomLat, p_cbinbound.p_cbinning.Unit)/p_cbinbound.p_cbinning.Width) + 1
+End Function
+
+Function CBinningBound_GetNbrOfRows(p_cbinbound As CBinningBound) As Integer
+	Dim fLeftBottomLong, fLeftBottomLat, fLeftUpperLong, fLeftUpperLat As Float
+	
+	fLeftBottomLong = p_cbinbound.LongMin
+	fLeftBottomLat = p_cbinbound.LatMin
+	fLeftUpperLong = p_cbinbound.LongMin
+	fLeftUpperLat = p_cbinbound.LatMax
+	
+	CBinningBound_GetNbrOfRows = Int(Distance(fLeftBottomLong, fLeftBottomLat, fLeftUpperLong, fLeftUpperLat, p_cbinbound.p_cbinning.Unit)/p_cbinbound.p_cbinning.Height) + 1
+End Function
+
+Function CBinningBound_GetLongTemp(p_cbinbound As CBinningBound, ByVal iCol As Integer) As Float
+	Dim fRadiusCol As Float
+	Dim oStart, oOffset As Object
+	Dim iAngle As Integer
+
+	fRadiusCol = p_cbinbound.p_cbinning.Width * (iCol-1)
+	iAngle = 0
+	oStart = CreatePoint(p_cbinbound.LongMin, p_cbinbound.LatMin)
+	oOffset = OFFSET(oStart, iAngle, fRadiusCol, p_cbinbound.p_cbinning.Unit)
+	CBinningBound_GetLongTemp = CentroidX(oOffset)
+End Function
+
+Function CBinningBound_GetLatTemp(p_cbinbound As CBinningBound, ByVal iRow As Integer) As Float
+	Dim fRadiusRow As Float
+	Dim oStart, oOffset As Object
+	Dim iAngle As Integer
+
+	fRadiusRow = p_cbinbound.p_cbinning.Height * (iRow-1)
+	iAngle = 90
+	oStart = CreatePoint(p_cbinbound.LongMin, p_cbinbound.LatMin)
+	oOffset = OFFSET(oStart, iAngle, fRadiusRow, p_cbinbound.p_cbinning.Unit)
+	CBinningBound_GetLatTemp = CentroidY(oOffset)
+End Function
+
+Function CBinningBound_GetQuadrant(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Integer
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_GetQuadrant = CBinning_GetQuadrant(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+Function CBinningBound_GetXIndex(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Integer
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_GetXIndex = CBinning_GetXIndex(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+Function CBinningBound_GetYIndex(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Integer
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_GetYIndex = CBinning_GetYIndex(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+Function CBinningBound_GetLongMid(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_GetLongMid = CBinning_GetLongMid(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+Function CBinningBound_GetLatMid(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_GetLatMid = CBinning_GetLatMid(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+Function CBinningBound_GetLong1(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_GetLong1 = CBinning_GetLong1(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+Function CBinningBound_GetLat1(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_GetLat1 = CBinning_GetLat1(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+Function CBinningBound_GetLong2(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_GetLong2 = CBinning_GetLong2(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+Function CBinningBound_GetLat2(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_GetLat2 = CBinning_GetLat2(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+Function CBinningBound_GetLong3(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_GetLong3 = CBinning_GetLong3(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+Function CBinningBound_GetLat3(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_GetLat3 = CBinning_GetLat3(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+Function CBinningBound_GetLong4(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_GetLong4 = CBinning_GetLong4(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+Function CBinningBound_GetLat4(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Float
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_GetLat4 = CBinning_GetLat4(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+Function CBinningBound_CreateObject(p_cbinbound As CBinningBound, ByVal iRow As Integer, ByVal iCol As Integer) As Object
+	Dim fLong, fLat As Float
+	fLong = CBinningBound_GetLongTemp(p_cbinbound, iCol)
+	fLat = CBinningBound_GetLatTemp(p_cbinbound, iRow)
+	CBinningBound_CreateObject = CBinning_CreateObject(p_cbinbound.p_cbinning, fLong, fLat)
+End Function
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,142 @@
+Include "CMetadata.mb" 'Not must
+
+
+
+TYPE CMyMetadataParam
+	KeyName As String
+	ParamName() As String
+	ParamValue() As String
+
+	Delimiter As String
+	Equaliser As String
+END TYPE
+
+
+Declare Sub CMyMetadata_Initialize(p_cmymetadata As CMyMetadataParam)
+Declare Sub CMyMetadata_DeInitialize(p_cmymetadata As CMyMetadataParam)
+
+Declare Sub CMyMetadata_SetKeyName(p_cmymetadata As CMyMetadataParam, ByVal sKeyName As String)
+Declare Sub CMyMetadata_Insert(p_cmymetadata As CMyMetadataParam, ByVal sParamName As String, ByVal sParamValue As String)
+Declare Sub CMyMetadata_Extract(p_cmymetadata As CMyMetadataParam, ByVal sKeyValueFromMetadata As String)
+
+Declare Function CMyMetadata_GetKeyName(p_cmymetadata As CMyMetadataParam) As String
+Declare Function CMyMetadata_GetKeyValue(p_cmymetadata As CMyMetadataParam) As String
+Declare Function CMyMetadata_GetParamNameIndex(p_cmymetadata As CMyMetadataParam, ByVal sParamName As String) As Integer
+Declare Function CMyMetadata_GetParamValue(p_cmymetadata As CMyMetadataParam, ByVal sParamName As String) As String
+
+
+
+
+
+
+Sub CMyMetadata_Initialize(p_cmymetadata As CMyMetadataParam)
+	p_cmymetadata.KeyName = "INIT"
+	Redim p_cmymetadata.ParamName(0)
+	Redim p_cmymetadata.ParamValue(0)
+
+	p_cmymetadata.Delimiter = ";"
+	p_cmymetadata.Equaliser = "="
+End Sub
+
+Sub CMyMetadata_DeInitialize(p_cmymetadata As CMyMetadataParam)
+	p_cmymetadata.KeyName = ""
+	Redim p_cmymetadata.ParamName(0)
+	Redim p_cmymetadata.ParamValue(0)
+End Sub
+
+Sub CMyMetadata_SetKeyName(p_cmymetadata As CMyMetadataParam, ByVal sKeyName As String)
+	p_cmymetadata.KeyName = sKeyName
+End Sub
+
+Sub CMyMetadata_Insert(p_cmymetadata As CMyMetadataParam, ByVal sParamName As String, ByVal sParamValue As String)
+	Dim iLength As Integer
+	iLength = UBound(p_cmymetadata.ParamName) + 1
+	Redim p_cmymetadata.ParamName(iLength)
+	Redim p_cmymetadata.ParamValue(iLength)
+	
+	p_cmymetadata.ParamName(iLength) = sParamName
+	p_cmymetadata.ParamValue(iLength) = sParamValue
+End Sub
+
+Sub CMyMetadata_Extract(p_cmymetadata As CMyMetadataParam, ByVal sKeyValueFromMetadata As String)
+	Dim iPos, iStart, iEnd, iLength As Integer
+	Dim saKeyValue() As String
+
+	IF(sKeyValueFromMetadata<>"")THEN
+		Redim saKeyValue(0)
+		iPos = InStr(1, sKeyValueFromMetadata, p_cmymetadata.Delimiter)
+		iStart = 1
+		Do While iPos>1 AND iStart<=Len(sKeyValueFromMetadata)
+			iEnd = iPos - 1
+			iLength = UBound(saKeyValue)+1
+			Redim saKeyValue(iLength)
+			saKeyValue(iLength) = Mid$(sKeyValueFromMetadata, iStart, iEnd-iStart+1) 
+			iStart = iPos + 1
+			
+			iPos = InStr(iStart, sKeyValueFromMetadata, p_cmymetadata.Delimiter)
+		Loop
+		
+		IF(UBound(saKeyValue)>0)THEN
+			Redim p_cmymetadata.ParamName(0)
+			Redim p_cmymetadata.ParamValue(0)
+
+			Dim i As Integer
+			FOR i=1 TO UBound(saKeyValue) 
+				iPos = InStr(1, saKeyValue(i), p_cmymetadata.Equaliser)
+				IF(iPos>0 AND iPos<Len(saKeyValue(i)))THEN
+					CALL CMyMetadata_Insert(p_cmymetadata, Mid$(saKeyValue(i), 1, iPos-1), Mid$(saKeyValue(i), iPos+1, Len(saKeyValue(i))-iPos))
+				END IF
+			NEXT 
+		END IF
+	END IF
+End Sub
+
+Function CMyMetadata_GetKeyName(p_cmymetadata As CMyMetadataParam) As String
+	CMyMetadata_GetKeyName = p_cmymetadata.KeyName
+End Function
+
+Function CMyMetadata_GetKeyValue(p_cmymetadata As CMyMetadataParam) As String
+	Dim sKeyValue As String
+	Dim iLength, i As Integer
+	sKeyValue = ""
+	iLength = UBound(p_cmymetadata.ParamName)
+	IF(iLength>0)THEN
+		FOR i=1 TO iLength 
+			sKeyValue = sKeyValue + p_cmymetadata.ParamName(i) + p_cmymetadata.Equaliser + p_cmymetadata.ParamValue(i) + p_cmymetadata.Delimiter
+		NEXT 
+	END IF
+	CMyMetadata_GetKeyValue = sKeyValue
+End Function
+
+Function CMyMetadata_GetParamNameIndex(p_cmymetadata As CMyMetadataParam, ByVal sParamName As String) As Integer
+	Dim iIndex, iLength, i As Integer
+	iIndex = -1
+	iLength = UBound(p_cmymetadata.ParamName)
+	IF(iLength>0)THEN
+		FOR i=1 TO iLength
+			IF(UCase$(sParamName)=UCase$(p_cmymetadata.ParamName(i)))THEN
+				iIndex = i
+				EXIT FOR
+			END IF
+		NEXT
+	END IF
+	CMyMetadata_GetParamNameIndex = iIndex
+End Function
+
+Function CMyMetadata_GetParamValue(p_cmymetadata As CMyMetadataParam, ByVal sParamName As String) As String
+	Dim iIndex As Integer
+	Dim sParamValue As String
+	iIndex = CMyMetadata_GetParamNameIndex(p_cmymetadata, sParamName)
+	sParamValue = ""
+	IF(iIndex>0)THEN
+		sParamValue = p_cmymetadata.ParamValue(iIndex)
+	END IF
+	CMyMetadata_GetParamValue = sParamValue
+End Function
+
+
+
+
+
+
+

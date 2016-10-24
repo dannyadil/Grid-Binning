@@ -1,0 +1,129 @@
+''WORKING WITH FILES
+Declare Method FILE_OpenFileDialog Class "MB_FileFunctions.FILEFunctions" Lib "FileFunctionsLib.dll" 
+	(ByVal prompt as String, ByVal directory as String, ByVal filetypes as String, ByVal filetypeindex as Integer) as Integer	'// filetypes in format: 
+																																'//		"MapInfo Tables (*.tab)|*.tab" - for 1 type
+																																'//		"Tables (*.tab)|*.tab|Workspaces (*.wor)|*.wor" - for multiple types
+																																'//		"MapInfo files (*.tab,*.wor)|*.tab;*.wor" - multiple types together
+Declare Method FILE_GetFileList Class "MB_FileFunctions.FILEFunctions" Lib "FileFunctionsLib.dll" (filelist() as String) as Integer
+
+
+
+''WORKING WITH FOLDERS
+Declare Method FOLDER_Browse Class "MB_FileFunctions.FOLDERFunctions" Lib "FileFunctionsLib.dll" (ByVal dir as String, ByVal prompt as String) as String
+Declare Method FOLDER_Create Class "MB_FileFunctions.FOLDERFunctions" Lib "FileFunctionsLib.dll" (ByVal path as String, sErr as String) as Integer
+Declare Method FOLDER_Delete Class "MB_FileFunctions.FOLDERFunctions" Lib "FileFunctionsLib.dll" (ByVal path as String, sErr as String) as Integer
+Declare Method FOLDER_Exists Class "MB_FileFunctions.FOLDERFunctions" Lib "FileFunctionsLib.dll" (ByVal path as String) as Integer
+
+Declare Method FOLDER_GetNumFiles Class "MB_FileFunctions.FOLDERFunctions" Lib "FileFunctionsLib.dll" (ByVal path as String, sErr as String) as Integer
+Declare Method FOLDER_GetFilePaths Class "MB_FileFunctions.FOLDERFunctions" Lib "FileFunctionsLib.dll" (paths() as String) as Integer	'// Always call GetNumFiles before calling GetFilePaths
+
+Declare Method FOLDER_GetNumSubDirs Class "MB_FileFunctions.FOLDERFunctions" Lib "FileFunctionsLib.dll" (ByVal path as String, sErr as String) as Integer
+Declare Method FOLDER_GetDirPaths Class "MB_FileFunctions.FOLDERFunctions" Lib "FileFunctionsLib.dll" (paths() as String) as Integer	'// Always call GetNumSubDirs before calling GetDirPaths
+
+
+
+''MY DECLARATION
+Declare Function Multi_OpenFileDialog(ByVal _path As String, ByVal _fileName As String, ByVal _fileType As String, ByVal _prompt As String, _filePathBuffer() As String) As Logical
+Declare Function IsFindTableNamePath(ByVal _fileDir As String, ByVal _tblName As String) As Logical
+Declare Function FOLDER_Browse_FindTableNamePath(ByVal _prompt As String, ByVal _tblName As String) As String
+
+
+
+''FUNCTION AND PROCEDURE
+'_fileHandler = FILE_OpenFileDialog("Open MIG-Vector Files (*.tab)...", "", "MapInfo Tables (*.tab)|*.tab|All Files (*.*)|*.*", 0)
+'Multi_OpenFileDialog("", "", "MapInfo Tables (*.tab)|*.tab|All Files (*.*)|*.*", "Open MIG-Vector Files (*.tab)...", _filePathBuffer)
+Function Multi_OpenFileDialog(ByVal _path As String, ByVal _fileName As String, ByVal _fileType As String, ByVal _prompt As String, _filePathBuffer() As String) As Logical
+	Dim _fileHandler, i As Integer
+	Dim _return As Logical
+	_return = FALSE
+
+	_fileHandler = FILE_OpenFileDialog(_prompt, _path, _fileType, 0)
+	IF(_fileHandler>0)THEN
+		REDIM _filePathBuffer(_fileHandler)
+		_fileHandler = FILE_GetFileList(_filePathBuffer)
+		IF _fileHandler>0 THEN 
+			_return = TRUE
+		ELSE
+			_return = FALSE
+		END IF
+	END IF
+	Multi_OpenFileDialog = _return
+End Function
+
+Function IsFindTableNamePath(ByVal _fileDir As String, ByVal _tblName As String) As Logical
+	Dim _nbrOfFiles, i As Integer
+	Dim _bResult As Logical
+	Dim _sFilePath, _sError, _fileBuffer() As String 
+	
+	_bResult = FALSE
+	_sFilePath = UCase$(_fileDir + _tblName + ".TAB")
+	_nbrOfFiles = FOLDER_GetNumFiles(_fileDir, _sError)
+	IF(_nbrOfFiles>0)THEN
+		REDIM _fileBuffer(_nbrOfFiles)
+		_nbrOfFiles = FOLDER_GetFilePaths(_fileBuffer)
+		FOR i=1 TO _nbrOfFiles 
+			IF(_sFilePath=UCase$(_fileBuffer(i)))THEN 
+				_bResult = TRUE
+				EXIT FOR
+			END IF
+		NEXT 
+	END IF
+
+	IF(_nbrOfFiles<0)THEN 
+		NOTE "Error: " & _sError
+	END IF	
+
+	IsFindTableNamePath = _bResult
+End Function
+
+Function FOLDER_Browse_FindTableNamePath(ByVal _prompt As String, ByVal _tblName As String) As String
+	Dim _fileDir, _sError, _fileBuffer(), _fileToSearch, _sFilePathResult As String 
+	Dim _nbrOfFiles, i As Integer
+	
+	_fileDir = FOLDER_Browse("C:\", _prompt)
+	_sFilePathResult = ""
+	IF(_fileDir<>"")THEN 
+		_fileToSearch = UCase$(_fileDir + _tblName + ".TAB")
+		IF(FOLDER_Exists(_fileDir))THEN
+			_nbrOfFiles = FOLDER_GetNumFiles(_fileDir, _sError)
+			IF(_nbrOfFiles>0)THEN
+				REDIM _fileBuffer(_nbrOfFiles)
+				_nbrOfFiles = FOLDER_GetFilePaths(_fileBuffer)
+				FOR i=1 TO _nbrOfFiles
+					IF(_fileToSearch=UCase$(_fileBuffer(i)))THEN
+						_sFilePathResult = _fileToSearch
+						EXIT FOR
+					END IF
+				NEXT
+			END IF
+		END IF
+	END IF
+
+	IF(_nbrOfFiles<0)THEN 
+		NOTE "Error: " & _sError
+	END IF	
+
+	FOLDER_Browse_FindTableNamePath = _sFilePathResult
+End Function
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,415 @@
+'''''''''''''''''''''''''''''''''''
+''''All For Binning
+'''''''''''''''''''''''''''''''''''
+
+TYPE CBinningParam
+	StartLongitude As Float
+	StartLatitude As Float
+	
+	Width As Float			'Lebar X per meter
+	Height As Float			'Lebar Y per meter
+
+	Unit As String			'Distance Unit default "m"
+END TYPE
+
+
+Declare Sub CBinning_Initialize(p_cbinning As CBinningParam) 
+Declare Sub CBinning_DeInitialize(p_cbinning As CBinningParam)
+Declare Sub CBinning_SetUnit(p_cbinning As CBinningParam, ByVal unit As String)
+Declare Sub CBinning_SetStartCoordinate(p_cbinning As CBinningParam, ByVal startLong As Float, ByVal startLat As Float)
+Declare Sub CBinning_SetBins(p_cbinning As CBinningParam, ByVal width As Float, ByVal height As Float)
+
+Declare Function CBinning_GetQuadrant(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Integer
+Declare Function CBinning_GetXIndex(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Integer
+Declare Function CBinning_GetYIndex(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Integer
+
+
+''OBJECT FROM INDEX
+Declare Function CBinning_GetLongMidFromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal xIndex As Integer) As Float
+Declare Function CBinning_GetLatMidFromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal yIndex As Integer) As Float
+Declare Function CBinning_GetLong1FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal xIndex As Integer) As Float
+Declare Function CBinning_GetLat1FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal yIndex As Integer) As Float
+Declare Function CBinning_GetLong2FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal xIndex As Integer) As Float
+Declare Function CBinning_GetLat2FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal yIndex As Integer) As Float
+Declare Function CBinning_GetLong3FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal xIndex As Integer) As Float
+Declare Function CBinning_GetLat3FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal yIndex As Integer) As Float
+Declare Function CBinning_GetLong4FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal xIndex As Integer) As Float
+Declare Function CBinning_GetLat4FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal yIndex As Integer) As Float
+Declare Function CBinning_CreateObjectFromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal xIndex As Integer, ByVal yIndex As Integer) As Object
+
+''OBJECT FROM LONG LAT
+Declare Function CBinning_GetLongMid(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+Declare Function CBinning_GetLatMid(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+Declare Function CBinning_GetLong1(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+Declare Function CBinning_GetLat1(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+Declare Function CBinning_GetLong2(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+Declare Function CBinning_GetLat2(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+Declare Function CBinning_GetLong3(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+Declare Function CBinning_GetLat3(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+Declare Function CBinning_GetLong4(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+Declare Function CBinning_GetLat4(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+Declare Function CBinning_CreateObject(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Object
+
+
+
+Sub CBinning_Initialize(p_cbinning As CBinningParam) 
+	p_cbinning.StartLongitude = 0
+	p_cbinning.StartLatitude = 0
+
+	p_cbinning.Width = 50
+	p_cbinning.Height = 50
+
+	p_cbinning.Unit = "m"
+End Sub
+
+Sub CBinning_DeInitialize(p_cbinning As CBinningParam)
+	p_cbinning.StartLongitude = 0
+	p_cbinning.StartLatitude = 0
+
+	p_cbinning.Width = 0
+	p_cbinning.Height = 0
+End Sub
+
+Sub CBinning_SetUnit(p_cbinning As CBinningParam, ByVal unit As String)
+	p_cbinning.Unit = unit
+End Sub
+
+Sub CBinning_SetStartCoordinate(p_cbinning As CBinningParam, ByVal startLong As Float, ByVal startLat As Float)
+	p_cbinning.StartLongitude = startLong
+	p_cbinning.StartLatitude = startLat
+End Sub
+
+Sub CBinning_SetBins(p_cbinning As CBinningParam, ByVal width As Float, ByVal height As Float)
+	p_cbinning.Width = width
+	p_cbinning.Height = height
+End Sub
+
+Function CBinning_GetQuadrant(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Integer
+	Dim iQuadrant As Integer 
+	iQuadrant = -1
+	IF((fLong-p_cbinning.StartLongitude)>0 AND (fLat-p_cbinning.StartLatitude)>0)THEN
+		iQuadrant = 1
+	ELSEIF((fLong-p_cbinning.StartLongitude)<0 AND (fLat-p_cbinning.StartLatitude)>0)THEN
+		iQuadrant = 2
+	ELSEIF((fLong-p_cbinning.StartLongitude)<0 AND (fLat-p_cbinning.StartLatitude)<0)THEN
+		iQuadrant = 3
+	ELSEIF((fLong-p_cbinning.StartLongitude)>0 AND (fLat-p_cbinning.StartLatitude)<0)THEN
+		iQuadrant = 4
+	ELSE 
+		iQuadrant = -1
+	END IF
+	CBinning_GetQuadrant = iQuadrant
+End Function
+
+Function CBinning_GetXIndex(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Integer
+	Dim iXIndex, iLongIdx As Integer
+	Dim fLongIdx, fLongDelta, startLong, startLat, endLong, endLat As Float
+	iXIndex = -1
+	IF(p_cbinning.Width>0)THEN
+		startLong = p_cbinning.StartLongitude
+		startLat = fLat
+		endLong = fLong
+		endLat = fLat
+		fLongIdx = Distance(startLong, startLat, endLong, endLat, p_cbinning.Unit)/p_cbinning.Width
+		iLongIdx = Int(fLongIdx)
+		IF((fLongIdx-iLongIdx)>0)THEN
+			iXIndex = iLongIdx + 1
+		ELSE
+			iXIndex = iLongIdx
+		END IF
+	END IF
+	CBinning_GetXIndex = iXIndex
+End Function
+
+Function CBinning_GetYIndex(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Integer
+	Dim iYIndex, iLatIdx As Integer
+	Dim fLatIdx, fLatDelta, startLong, startLat, endLong, endLat As Float
+	iYIndex = -1
+	IF(p_cbinning.Height>0)THEN
+		startLong = fLong
+		startLat = p_cbinning.StartLatitude
+		endLong = fLong
+		endLat = fLat
+		fLatIdx = Distance(startLong, startLat, endLong, endLat, p_cbinning.Unit)/p_cbinning.Height
+		iLatIdx = Int(fLatIdx)
+		IF((fLatIdx-iLatIdx)>0)THEN
+			iYIndex = iLatIdx + 1
+		ELSE
+			iYIndex = iLatIdx
+		END IF
+	END IF
+	CBinning_GetYIndex = iYIndex
+End Function
+
+Function CBinning_GetLongMidFromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal xIndex As Integer) As Float
+	Dim fResult, fRadius As Float
+	Dim oStart, oOffset As Object
+	Dim iAngle As Integer
+
+	IF(xIndex>0 AND iQuadrant>0 AND iQuadrant<5)THEN
+		fRadius = xIndex * p_cbinning.Width - p_cbinning.Width/2
+		oStart = CreatePoint(p_cbinning.StartLongitude, p_cbinning.StartLatitude)
+		DO CASE iQuadrant
+			CASE 1
+				iAngle = 0
+			CASE 2
+				iAngle = 180
+			CASE 3
+				iAngle = 180
+			CASE 4
+				iAngle = 360
+		END CASE
+
+		oOffset = OFFSET(oStart, iAngle, fRadius, p_cbinning.Unit)
+		fResult = CentroidX(oOffset)
+	END IF
+	CBinning_GetLongMidFromIdx = fResult
+End Function
+
+Function CBinning_GetLatMidFromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal yIndex As Integer) As Float
+	Dim fResult, fRadius As Float
+	Dim oStart, oOffset As Object
+	Dim iAngle As Integer
+
+	IF(yIndex>0 AND iQuadrant>0 AND iQuadrant<5)THEN
+		oStart = CreatePoint(p_cbinning.StartLongitude, p_cbinning.StartLatitude)
+		fRadius = yIndex * p_cbinning.Height - p_cbinning.Height/2
+		DO CASE iQuadrant
+			CASE 1
+				iAngle = 90
+			CASE 2
+				iAngle = 90
+			CASE 3
+				iAngle = 270
+			CASE 4
+				iAngle = 270
+		END CASE
+
+		oOffset = OFFSET(oStart, iAngle, fRadius, p_cbinning.Unit)
+		fResult = CentroidY(oOffset)
+	END IF
+	CBinning_GetLatMidFromIdx = fResult
+End Function
+
+Function CBinning_GetLong1FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal xIndex As Integer) As Float
+	Dim fResult, fRadius As Float
+	Dim oStart, oOffset As Object
+	Dim iAngle As Integer
+
+	IF(xIndex>0 AND iQuadrant>0 AND iQuadrant<5)THEN
+		fRadius = xIndex * p_cbinning.Width - p_cbinning.Width
+		oStart = CreatePoint(p_cbinning.StartLongitude, p_cbinning.StartLatitude)
+		DO CASE iQuadrant
+			CASE 1
+				iAngle = 0
+			CASE 2
+				iAngle = 180
+			CASE 3
+				iAngle = 180
+			CASE 4
+				iAngle = 360
+		END CASE
+
+		oOffset = OFFSET(oStart, iAngle, fRadius, p_cbinning.Unit)
+		fResult = CentroidX(oOffset)
+	END IF
+	CBinning_GetLong1FromIdx = fResult
+End Function
+
+Function CBinning_GetLat1FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal yIndex As Integer) As Float
+	Dim fResult, fRadius As Float
+	Dim oStart, oOffset As Object
+	Dim iAngle As Integer
+
+	IF(yIndex>0 AND iQuadrant>0 AND iQuadrant<5)THEN
+		oStart = CreatePoint(p_cbinning.StartLongitude, p_cbinning.StartLatitude)
+		fRadius = yIndex * p_cbinning.Height
+		DO CASE iQuadrant
+			CASE 1
+				iAngle = 90
+			CASE 2
+				iAngle = 90
+			CASE 3
+				iAngle = 270
+			CASE 4
+				iAngle = 270
+		END CASE
+
+		oOffset = OFFSET(oStart, iAngle, fRadius, p_cbinning.Unit)
+		fResult = CentroidY(oOffset)
+	END IF
+	CBinning_GetLat1FromIdx = fResult
+End Function
+
+Function CBinning_GetLong2FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal xIndex As Integer) As Float
+	Dim fResult, fRadius As Float
+	Dim oStart, oOffset As Object
+	Dim iAngle As Integer
+
+	IF(xIndex>0 AND iQuadrant>0 AND iQuadrant<5)THEN
+		fRadius = xIndex * p_cbinning.Width
+		oStart = CreatePoint(p_cbinning.StartLongitude, p_cbinning.StartLatitude)
+		DO CASE iQuadrant
+			CASE 1
+				iAngle = 0
+			CASE 2
+				iAngle = 180
+			CASE 3
+				iAngle = 180
+			CASE 4
+				iAngle = 360
+		END CASE
+
+		oOffset = OFFSET(oStart, iAngle, fRadius, p_cbinning.Unit)
+		fResult = CentroidX(oOffset)
+	END IF
+	CBinning_GetLong2FromIdx = fResult
+End Function
+
+
+Function CBinning_GetLat2FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal yIndex As Integer) As Float
+	CBinning_GetLat2FromIdx = CBinning_GetLat1FromIdx(p_cbinning, iQuadrant, yIndex)
+End Function
+
+Function CBinning_GetLong3FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal xIndex As Integer) As Float
+	CBinning_GetLong3FromIdx = CBinning_GetLong2FromIdx(p_cbinning, iQuadrant, xIndex)
+End Function
+
+Function CBinning_GetLat3FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal yIndex As Integer) As Float
+	Dim fResult, fRadius As Float
+	Dim oStart, oOffset As Object
+	Dim iAngle As Integer
+
+	IF(yIndex>0 AND iQuadrant>0 AND iQuadrant<5)THEN
+		oStart = CreatePoint(p_cbinning.StartLongitude, p_cbinning.StartLatitude)
+		fRadius = yIndex * p_cbinning.Height - p_cbinning.Height
+		DO CASE iQuadrant
+			CASE 1
+				iAngle = 90
+			CASE 2
+				iAngle = 90
+			CASE 3
+				iAngle = 270
+			CASE 4
+				iAngle = 270
+		END CASE
+
+		oOffset = OFFSET(oStart, iAngle, fRadius, p_cbinning.Unit)
+		fResult = CentroidY(oOffset)
+	END IF
+	CBinning_GetLat3FromIdx = fResult
+End Function
+
+Function CBinning_GetLong4FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal xIndex As Integer) As Float
+	CBinning_GetLong4FromIdx = CBinning_GetLong1FromIdx(p_cbinning, iQuadrant, xIndex)
+End Function
+
+Function CBinning_GetLat4FromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal yIndex As Integer) As Float
+ 	CBinning_GetLat4FromIdx = CBinning_GetLat3FromIdx(p_cbinning, iQuadrant, yIndex)
+End Function
+
+Function CBinning_CreateObjectFromIdx(p_cbinning As CBinningParam, ByVal iQuadrant As Integer, ByVal xIndex As Integer, ByVal yIndex As Integer) As Object
+	Dim oBin As Object
+	Dim fLong1, fLat1, fLong2, fLat2, fLong3, fLat3, fLong4, fLat4 As Float
+	
+	fLong1 = CBinning_GetLong1FromIdx(p_cbinning, iQuadrant, xIndex)
+	fLat1 = CBinning_GetLat1FromIdx(p_cbinning, iQuadrant, yIndex)
+
+	fLong2 = CBinning_GetLong2FromIdx(p_cbinning, iQuadrant, xIndex)
+	fLat2 = CBinning_GetLat2FromIdx(p_cbinning, iQuadrant, yIndex)
+
+	fLong3 = CBinning_GetLong3FromIdx(p_cbinning, iQuadrant, xIndex)
+	fLat3 = CBinning_GetLat3FromIdx(p_cbinning, iQuadrant, yIndex)
+
+	fLong4 = CBinning_GetLong4FromIdx(p_cbinning, iQuadrant, xIndex)
+	fLat4 = CBinning_GetLat4FromIdx(p_cbinning, iQuadrant, yIndex)
+
+	CREATE REGION INTO VARIABLE oBin 1 4 (fLong1,fLat1) (fLong2, fLat2) (fLong3, fLat3) (fLong4, fLat4)
+
+	CBinning_CreateObjectFromIdx = oBin
+End Function
+
+
+
+
+
+Function CBinning_GetLongMid(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+	Dim iQuadrant, xIndex As Integer
+	iQuadrant = CBinning_GetQuadrant(p_cbinning, fLong, fLat)
+	xIndex = CBinning_GetXIndex(p_cbinning, fLong, fLat)
+	CBinning_GetLongMid = CBinning_GetLongMidFromIdx(p_cbinning, iQuadrant, xIndex)
+End Function
+
+Function CBinning_GetLatMid(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+	Dim iQuadrant, yIndex As Integer
+	iQuadrant = CBinning_GetQuadrant(p_cbinning, fLong, fLat)
+	yIndex = CBinning_GetYIndex(p_cbinning, fLong, fLat)
+	CBinning_GetLatMid = CBinning_GetLatMidFromIdx(p_cbinning, iQuadrant, yIndex)
+End Function
+
+Function CBinning_GetLong1(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+	Dim iQuadrant, xIndex As Integer
+	iQuadrant = CBinning_GetQuadrant(p_cbinning, fLong, fLat)
+	xIndex = CBinning_GetXIndex(p_cbinning, fLong, fLat)
+	CBinning_GetLong1 = CBinning_GetLong1FromIdx(p_cbinning, iQuadrant, xIndex)
+End Function
+
+Function CBinning_GetLat1(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+	Dim iQuadrant, yIndex As Integer
+	iQuadrant = CBinning_GetQuadrant(p_cbinning, fLong, fLat)
+	yIndex = CBinning_GetYIndex(p_cbinning, fLong, fLat)
+	CBinning_GetLat1 = CBinning_GetLat1FromIdx(p_cbinning, iQuadrant, yIndex)
+End Function
+
+Function CBinning_GetLong2(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+	Dim iQuadrant, xIndex As Integer
+	iQuadrant = CBinning_GetQuadrant(p_cbinning, fLong, fLat)
+	xIndex = CBinning_GetXIndex(p_cbinning, fLong, fLat)
+	CBinning_GetLong2 = CBinning_GetLong2FromIdx(p_cbinning, iQuadrant, xIndex)
+End Function
+
+Function CBinning_GetLat2(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+	Dim iQuadrant, yIndex As Integer
+	iQuadrant = CBinning_GetQuadrant(p_cbinning, fLong, fLat)
+	yIndex = CBinning_GetYIndex(p_cbinning, fLong, fLat)
+	CBinning_GetLat2 = CBinning_GetLat2FromIdx(p_cbinning, iQuadrant, yIndex)
+End Function
+
+Function CBinning_GetLong3(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+	Dim iQuadrant, xIndex As Integer
+	iQuadrant = CBinning_GetQuadrant(p_cbinning, fLong, fLat)
+	xIndex = CBinning_GetXIndex(p_cbinning, fLong, fLat)
+	CBinning_GetLong3 = CBinning_GetLong3FromIdx(p_cbinning, iQuadrant, xIndex)
+End Function
+
+Function CBinning_GetLat3(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+	Dim iQuadrant, yIndex As Integer
+	iQuadrant = CBinning_GetQuadrant(p_cbinning, fLong, fLat)
+	yIndex = CBinning_GetYIndex(p_cbinning, fLong, fLat)
+	CBinning_GetLat3 = CBinning_GetLat3FromIdx(p_cbinning, iQuadrant, yIndex)
+End Function
+
+Function CBinning_GetLong4(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+	Dim iQuadrant, xIndex As Integer
+	iQuadrant = CBinning_GetQuadrant(p_cbinning, fLong, fLat)
+	xIndex = CBinning_GetXIndex(p_cbinning, fLong, fLat)
+	CBinning_GetLong4 = CBinning_GetLong4FromIdx(p_cbinning, iQuadrant, xIndex)
+End Function
+
+Function CBinning_GetLat4(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Float
+	Dim iQuadrant, yIndex As Integer
+	iQuadrant = CBinning_GetQuadrant(p_cbinning, fLong, fLat)
+	yIndex = CBinning_GetYIndex(p_cbinning, fLong, fLat)
+	CBinning_GetLat4 = CBinning_GetLat4FromIdx(p_cbinning, iQuadrant, yIndex)
+End Function
+
+Function CBinning_CreateObject(p_cbinning As CBinningParam, ByVal fLong As Float, ByVal fLat As Float) As Object
+	Dim iQuadrant, xIndex, yIndex As Integer
+	iQuadrant = CBinning_GetQuadrant(p_cbinning, fLong, fLat)
+	xIndex = CBinning_GetXIndex(p_cbinning, fLong, fLat)
+	yIndex = CBinning_GetYIndex(p_cbinning, fLong, fLat)
+	CBinning_CreateObject = CBinning_CreateObjectFromIdx(p_cbinning, iQuadrant, xIndex, yIndex)
+End Function
+
+
+

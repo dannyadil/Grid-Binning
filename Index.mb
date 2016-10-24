@@ -1,0 +1,167 @@
+Include "Mapbasic.def"
+Include "Icons.def"
+'Include "CProject.mb"
+Include "CGridMenu.mb"
+
+
+Dim p_cproject As CProjectParam
+
+define PROJECT_NAME		"GRID"
+define MID_GRIDTOOLS		101
+define MID_GRID			102
+
+
+Declare Sub Main()
+Declare Sub About()
+
+Declare Sub OpenProjectMenu()
+Declare Sub GridBlankCreateMenu()
+Declare Sub GridUpgradeBlankToObjectMenu()
+Declare Sub GridObjectCreateMenu()
+Declare Sub GridIndexFromPointMenu()
+
+
+Sub Main()
+	'Creating Sub Menu Grid
+	Create Menu "Grid" As 
+					"Create Blank Grid"					Calling GridBlankCreateMenu, 
+					"Upgrade Blank Grid To Object"		Calling GridUpgradeBlankToObjectMenu, 
+					"(-", 	
+					"Create Object Grid"					Calling GridObjectCreateMenu, 
+					"(-", 
+					"Add Grid Column To Point Table"	Calling GridIndexFromPointMenu
+	
+	'Creating Main Menu
+	Create Menu "&MyTools" As 
+					"Open Project"			Calling OpenProjectMenu, 
+					"(-", 
+					"&Grid" ID MID_GRID		As "Grid", 
+					"(-", 
+					"About"					Calling About
+
+	'Alter to Menu Bar
+	Alter Menu Bar Add "MyTools"
+End Sub
+
+Sub About()
+Dialog
+    Title "About, Collection of My Tools!"
+    Control StaticText 
+        Position 5,10
+        Width 200
+        Height 40
+        Title "Create by Danny Adil Sibarani (danny.sibarani@gmail.com).." + Chr$(10) + "Latest Updated: October 2, 2016!!!"
+End Sub 
+
+Sub OpenProjectMenu()
+	CALL CProject_Initialize(p_cproject, PROJECT_NAME)
+	CALL CProject_Open(p_cproject)
+	CALL CProject_Parser(p_cproject)
+
+	IF(CProject_IsOpen(p_cproject))THEN
+		Alter Menu Item ID MID_GRID Enable
+	END IF
+End Sub
+
+Sub GridBlankCreateMenu()
+	Dim filePath As String
+
+	IF(CProject_IsOpen(p_cproject))THEN
+		filePath = FileSaveAsDlg(PathToDirectory$(p_cproject.p_cotable.Directory), "GRID", "TAB", "Save Table Grid As (*.TAB)...")
+		IF(filePath<>"")THEN
+			Dim p_cgridmenu As CGridMenuParam
+			CALL CGridMenu_Initialize(p_cgridmenu)
+			CALL CMinMaxDlg_Show(p_cgridmenu.p_cminmaxdlg)
+			IF(CMinMaxDlg_IsOKButtonClick(p_cgridmenu.p_cminmaxdlg))THEN
+				IF(p_cgridmenu.p_cminmaxdlg.IsAddMidCoordCol)THEN
+					CALL CTBinning_ReInitialize(p_cgridmenu.p_ctbinning, p_cgridmenu.p_cminmaxdlg.IsAddMidCoordCol, TRUE)
+				END IF
+				CALL CGridMenu_CreateBlank(p_cgridmenu, filePath)
+				CALL CProject_UpdateRow(p_cproject, p_cproject.ProjectName, PathToTableName$(filePath), filePath)
+			END IF
+			CALL CGridMenu_DeInitialize(p_cgridmenu)
+		END IF
+	ELSE 
+		Note "GridBlankCreateMenu: No project is open. Please open project..."
+	END IF
+End Sub
+
+Sub GridUpgradeBlankToObjectMenu()
+	Dim filePath As String
+	
+	IF(CProject_IsOpen(p_cproject))THEN
+		filePath = FileOpenDlg(PathToDirectory$(p_cproject.p_cotable.Directory), "", "TAB", "Open Blank Table Grid (*.TAB)...")
+		IF(filePath<>"")THEN
+			Dim p_cgridmenu As CGridMenuParam
+			CALL CGridMenu_Initialize(p_cgridmenu)
+			CALL CGridMenu_ReadMetadata(p_cgridmenu, PathToTableName$(filePath))
+			CALL CMinMaxDlg_Show(p_cgridmenu.p_cminmaxdlg)
+			IF(CMinMaxDlg_IsOKButtonClick(p_cgridmenu.p_cminmaxdlg))THEN
+				CALL CGridMenu_UpgradeBlankToObject(p_cgridmenu, filePath)
+				CALL CProject_UpdateRow(p_cproject, p_cproject.ProjectName, PathToTableName$(filePath), filePath)
+			END IF
+			CALL CGridMenu_DeInitialize(p_cgridmenu)
+		END IF
+	ELSE 
+		Note "GridUpgradeBlankToObjectMenu: No project is open. Please open project..."
+	END IF
+End Sub
+
+Sub GridObjectCreateMenu()
+	Dim filePath As String
+
+	IF(CProject_IsOpen(p_cproject))THEN
+		filePath = FileSaveAsDlg(PathToDirectory$(p_cproject.p_cotable.Directory), "GRID", "TAB", "Save Table Grid As (*.TAB)...")
+		IF(filePath<>"")THEN
+			Dim p_cgridmenu As CGridMenuParam
+			CALL CGridMenu_Initialize(p_cgridmenu)
+			CALL CMinMaxDlg_Show(p_cgridmenu.p_cminmaxdlg)
+			IF(CMinMaxDlg_IsOKButtonClick(p_cgridmenu.p_cminmaxdlg))THEN
+				IF(p_cgridmenu.p_cminmaxdlg.IsAddMidCoordCol)THEN
+					CALL CTBinning_ReInitialize(p_cgridmenu.p_ctbinning, p_cgridmenu.p_cminmaxdlg.IsAddMidCoordCol, TRUE)
+				END IF
+				CALL CGridMenu_CreateObject(p_cgridmenu, filePath)
+				CALL CProject_UpdateRow(p_cproject, p_cproject.ProjectName, PathToTableName$(filePath), filePath)
+			END IF
+			CALL CGridMenu_DeInitialize(p_cgridmenu)
+		END IF
+	ELSE 
+		Note "GridObjectCreateMenu: No project is open. Please open project..."
+	END IF
+End Sub 
+
+Sub GridIndexFromPointMenu()
+	Dim filePath As String
+	
+	IF(CProject_IsOpen(p_cproject))THEN
+		filePath = FileOpenDlg(PathToDirectory$(p_cproject.p_cotable.Directory), "", "TAB", "Open Point (Object) Table (*.TAB)...")
+		IF(filePath<>"")THEN
+			'Dim p_cgridmenu As CGridMenuParam
+			'CALL CGridMenu_Initialize(p_cgridmenu)
+			'CALL CGridMenu_ReadMetadata(p_cgridmenu, PathToTableName$(filePath))
+			'CALL CMinMaxDlg_Show(p_cgridmenu.p_cminmaxdlg)
+			'IF(CMinMaxDlg_IsOKButtonClick(p_cgridmenu.p_cminmaxdlg))THEN
+			'	CALL CGridMenu_UpgradeBlankToObject(p_cgridmenu, filePath)
+			'	CALL CProject_UpdateRow(p_cproject, p_cproject.ProjectName, PathToTableName$(filePath), filePath)
+			'END IF
+			'CALL CGridMenu_DeInitialize(p_cgridmenu)
+		END IF
+	ELSE 
+		Note "GridIndexFromPointMenu: No project is open. Please open project..."
+	END IF
+End Sub
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
